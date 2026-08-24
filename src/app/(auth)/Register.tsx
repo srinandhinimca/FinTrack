@@ -1,76 +1,54 @@
-import { useState } from "react";
-import {
-    KeyboardAvoidingView,
+import {  Alert, KeyboardAvoidingView,
     Platform,
     Pressable,
     SafeAreaView,
     StyleSheet,
     Text,
     TextInput,
-    View,
-} from "react-native";
-
+    View, } from 'react-native'
+import { useState } from 'react'
+import InputField from '@/components/Forms/InputField'
+import PrimaryButton from '@/components/Button/PrimaryButton'
+import { useAuth } from '@/context/AuthProvider'
+import ThemeToggle from "../../components/ThemeToggle";
+import { useTheme } from "../../context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
-import ThemeToggle from "../../components/ThemeToggle";
-import { useTheme } from "../../context/ThemeContext";
-
-export default function Register() {
+const RegisterScreen = () => {
   const { theme } = useTheme();
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [showPassword, setShowPassword] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState(false);
 
   const [error, setError] = useState("");
 
-  const handleRegister = () => {
-    setError("");
+  const { signUp } = useAuth();
 
-    if (!name.trim()) {
-      setError("Please enter your name.");
+  const handleRegister = async () => {
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert("Please enter the complete register details")
       return;
     }
-
-    if (!email.trim()) {
-      setError("Please enter your email.");
+    if(password!==confirmPassword){
+      Alert.alert("Passwords do not match")
       return;
     }
-
-    if (!email.includes("@")) {
-      setError("Please enter a valid email address.");
-      return;
+    try {
+      await signUp(email, password)
+      alert("Success,Account created")
+    } catch (error: any) {
+      Alert.alert("Registration Failed",error.message)
     }
-
-    if (!password.trim()) {
-      setError("Please enter your password.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must contain at least 6 characters.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    // Temporary registration
-    // API integration will be added later.
-
-    router.replace("/tabs");
-  };
+  }
 
   return (
-    <SafeAreaView
+     <View
       style={[
         styles.safeArea,
         {
@@ -427,7 +405,7 @@ export default function Register() {
 
             <Pressable
               onPress={() =>
-                router.push("/auth/login")
+                router.push("/(auth)/Login")
               }
             >
               <Text
@@ -445,9 +423,11 @@ export default function Register() {
 
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
+    </View>
+  )
 }
+
+export default RegisterScreen
 
 const styles = StyleSheet.create({
   safeArea: {

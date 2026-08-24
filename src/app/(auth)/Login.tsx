@@ -1,65 +1,72 @@
-import { useState } from "react";
 import {
+  Alert,
     KeyboardAvoidingView,
     Platform,
     Pressable,
-    SafeAreaView,
     StyleSheet,
     Text,
     TextInput,
     useWindowDimensions,
     View,
 } from "react-native";
-
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import React, { useState } from 'react'
+import InputField from '@/components/Forms/InputField'
+import PrimaryButton from '@/components/Button/PrimaryButton'
+import { useAuth } from '@/context/AuthProvider'
+import { useRouter } from 'expo-router'
+import ThemeToggle from "@/components/ThemeToggle"
+import { useTheme } from "@/context/ThemeContext"
 
-import ThemeToggle from "../../components/ThemeToggle";
-import { useTheme } from "../../context/ThemeContext";
-
-export default function Login() {
-  const { theme } = useTheme();
-
+const Login = () => {
+  const [isLogin, setIsLogin] = useState(true)
+    const { theme } = useTheme();
+  
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const { width, height } = useWindowDimensions();
-
-  const isWeb = Platform.OS === "web";
+    const isWeb = Platform.OS === "web";
   const isSmallScreen = height < 700;
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
+  
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = () => {
-    setError("");
-
-    if (!email.trim()) {
-      setError("Please enter your email.");
-      return;
+  
+  const router=useRouter();
+  const { signIn } = useAuth();
+  
+    const handleSignIn = async () => {
+      if (!email || !password) {
+        Alert.alert("Please enter the complete register details")
+      }
+      try {
+        await signIn(email, password)
+        router.replace("/(tabs)/Home")
+      } catch (error: any) {
+        alert(error.message)
+      }
     }
-
-    if (!email.includes("@")) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    if (!password.trim()) {
-      setError("Please enter your password.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must contain at least 6 characters.");
-      return;
-    }
-
-    // Temporary login
-    router.replace("/tabs");
-  };
-
   return (
-    <SafeAreaView
+    // <View style={styles.container}>
+    //   <InputField
+    //     placeholder='Enter your email'
+    //     value={email}
+    //     onChangeText={setEmail}
+    //   />
+    //   <InputField
+    //     placeholder='Enter your password'
+    //     value={password}
+    //     onChangeText={setPassword}
+    //     secureTextEntry
+    //   />
+    //   <PrimaryButton
+    //     title="Login"
+    //     onPress={handlSignIn}
+    //   />
+    // </View>
+
+     <View
       style={[
         styles.safeArea,
         {
@@ -321,7 +328,7 @@ export default function Login() {
                 backgroundColor: theme.primary,
               },
             ]}
-            onPress={handleLogin}
+            onPress={handleSignIn}
           >
             <Text style={styles.loginButtonText}>
               Log In
@@ -438,7 +445,7 @@ export default function Login() {
 
             <Pressable
               onPress={() =>
-                router.push("/auth/register")
+                router.push("/Register")
               }
             >
               <Text
@@ -459,9 +466,11 @@ export default function Login() {
           <View style={styles.bottomSpace} />
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
+    </View>
+  )
 }
+
+export default Login
 
 const styles = StyleSheet.create({
   safeArea: {
