@@ -8,7 +8,7 @@ export const lightTheme = {
 
   border: "#E5E7EB",
 
-  primary: "#147D74",
+  primary: "#023733",
   primaryText: "#FFFFFF",
 
   inputBackground: "#FFFFFF",
@@ -28,7 +28,7 @@ export const darkTheme = {
 
   border: "#374151",
 
-  primary: "#1B9A8F",
+  primary: "#087F5B",
   primaryText: "#FFFFFF",
 
   inputBackground: "#1F2937",

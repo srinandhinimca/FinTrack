@@ -1,14 +1,14 @@
 import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from "react-native";
+import { supabase } from "../../lib/supabase";
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -25,52 +25,90 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] =useState(false);
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
-    setError("");
+  const handleRegister = async () => {  
+  setError("");
 
-    if (!name.trim()) {
-      setError("Please enter your name.");
+  if (!name.trim()) {
+    setError("Please enter your name.");
+    return;
+  }
+
+  if (!email.trim()) {
+    setError("Please enter your email.");
+    return;
+  }
+
+  if (!email.includes("@")) {
+    setError("Please enter a valid email address.");
+    return;
+  }
+
+  if (!password.trim()) {
+    setError("Please enter your password.");
+    return;
+  }
+
+  if (password.length < 6) {
+    setError("Password must contain at least 6 characters.");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError("Passwords do not match.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    // 1. Create user in Supabase Authentication
+    const { data, error: authError } = await supabase.auth.signUp({
+      email: email.trim(),
+      password: password,
+    });
+
+    if (authError) {
+      setError(authError.message);
       return;
     }
 
-    if (!email.trim()) {
-      setError("Please enter your email.");
+    if (!data.user) {
+      setError("Unable to create account.");
       return;
     }
 
-    if (!email.includes("@")) {
-      setError("Please enter a valid email address.");
+    // 2. Save profile information
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .insert({
+        id: data.user.id,
+        full_name: name.trim(),
+        emailid: email.trim(),
+      });
+
+    if (profileError) {
+      setError(profileError.message);
       return;
     }
 
-    if (!password.trim()) {
-      setError("Please enter your password.");
-      return;
-    }
+    // 3. Registration successful
+    router.replace("/auth/login");
 
-    if (password.length < 6) {
-      setError("Password must contain at least 6 characters.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    // Temporary registration
-    // API integration will be added later.
-
-    router.replace("/tabs");
-  };
+  } catch (error) {
+    console.error("Registration error:", error);
+    setError("Something went wrong. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
-    <SafeAreaView
+    <View
       style={[
         styles.safeArea,
         {
@@ -402,12 +440,13 @@ export default function Register() {
               styles.registerButton,
               {
                 backgroundColor: theme.primary,
+                opacity: loading ? 0.6 : 1
               },
             ]}
             onPress={handleRegister}
           >
             <Text style={styles.registerButtonText}>
-              Create Account
+              {loading ? "Creating Account..." : "Create Account"}
             </Text>
           </Pressable>
 
@@ -445,7 +484,7 @@ export default function Register() {
 
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 

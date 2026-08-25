@@ -1,24 +1,27 @@
 import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    useWindowDimensions,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 import ThemeToggle from "../../components/ThemeToggle";
+import { useAuth } from "../../context/AuthProvider";
 import { useTheme } from "../../context/ThemeContext";
 
 export default function Login() {
   const { theme } = useTheme();
+
+  // Supabase authentication
+  const { signIn, loading } = useAuth();
 
   const { width, height } = useWindowDimensions();
 
@@ -31,9 +34,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError("");
 
+    // Email validation
     if (!email.trim()) {
       setError("Please enter your email.");
       return;
@@ -44,22 +48,29 @@ export default function Login() {
       return;
     }
 
-    if (!password.trim()) {
+    // Password validation
+    if (!password) {
       setError("Please enter your password.");
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must contain at least 6 characters.");
-      return;
-    }
+    try {
+      // Login through AuthProvider
+      await signIn(email.trim(), password);
 
-    // Temporary login
-    router.replace("/tabs");
+      // Login successful
+      router.replace("/_tabs/spending");
+    } catch (err: any) {
+      console.error("Login error:", err);
+
+      setError(
+        err?.message || "Invalid email or password."
+      );
+    }
   };
 
   return (
-    <SafeAreaView
+    <View
       style={[
         styles.safeArea,
         {
@@ -77,7 +88,7 @@ export default function Login() {
           style={[
             styles.page,
             {
-              maxWidth: isWeb ? 480 : undefined,
+              width: isWeb ? Math.min(width - 32, 480) : "100%",
               paddingHorizontal: isSmallScreen ? 18 : 24,
               paddingTop: isSmallScreen ? 8 : 18,
               paddingBottom: isSmallScreen ? 8 : 18,
@@ -172,7 +183,9 @@ export default function Login() {
               styles.inputContainer,
               {
                 backgroundColor: theme.inputBackground,
-                borderColor: theme.border,
+                borderColor: error
+                  ? theme.error
+                  : theme.border,
               },
             ]}
           >
@@ -319,12 +332,14 @@ export default function Login() {
               styles.loginButton,
               {
                 backgroundColor: theme.primary,
+                opacity: loading ? 0.6 : 1,
               },
             ]}
             onPress={handleLogin}
+            disabled={loading}
           >
             <Text style={styles.loginButtonText}>
-              Log In
+              {loading ? "Signing In..." : "Log In"}
             </Text>
           </Pressable>
 
@@ -459,7 +474,7 @@ export default function Login() {
           <View style={styles.bottomSpace} />
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -474,47 +489,34 @@ const styles = StyleSheet.create({
 
   page: {
     flex: 1,
-
     width: "100%",
-
     alignSelf: "center",
-
     justifyContent: "flex-start",
   },
 
   topBar: {
     height: 40,
-
     alignItems: "flex-end",
-
     justifyContent: "center",
-
     marginBottom: 2,
   },
 
   logoContainer: {
     flexDirection: "row",
-
     alignItems: "center",
   },
 
   logoCircle: {
     width: 34,
-
     height: 34,
-
     borderRadius: 17,
-
     justifyContent: "center",
-
     alignItems: "center",
-
     marginRight: 9,
   },
 
   logoText: {
     fontSize: 19,
-
     fontWeight: "700",
   },
 
@@ -524,61 +526,43 @@ const styles = StyleSheet.create({
 
   subtitle: {
     fontSize: 12,
-
     lineHeight: 17,
-
     marginTop: 7,
   },
 
   label: {
     fontSize: 12,
-
     fontWeight: "600",
-
     marginBottom: 6,
-
     marginTop: 4,
   },
 
   inputContainer: {
     height: 45,
-
     borderWidth: 1,
-
     borderRadius: 7,
-
     flexDirection: "row",
-
     alignItems: "center",
-
     paddingHorizontal: 12,
-
     marginBottom: 10,
   },
 
   input: {
     flex: 1,
-
     fontSize: 13,
-
     marginLeft: 9,
-
     paddingVertical: 0,
   },
 
   errorContainer: {
     flexDirection: "row",
-
     alignItems: "center",
-
     marginTop: -4,
-
     marginBottom: 7,
   },
 
   errorText: {
     fontSize: 10,
-
     marginLeft: 4,
   },
 
@@ -588,87 +572,64 @@ const styles = StyleSheet.create({
 
   forgotText: {
     fontSize: 10,
-
     fontWeight: "600",
   },
 
   loginButton: {
     height: 45,
-
     borderRadius: 7,
-
     justifyContent: "center",
-
     alignItems: "center",
   },
 
   loginButtonText: {
     color: "#FFFFFF",
-
     fontSize: 13,
-
     fontWeight: "700",
   },
 
   dividerContainer: {
     flexDirection: "row",
-
     alignItems: "center",
   },
 
   divider: {
     flex: 1,
-
     height: 1,
   },
 
   orText: {
     marginHorizontal: 9,
-
     fontSize: 10,
   },
 
   socialButton: {
     height: 40,
-
     borderWidth: 1,
-
     borderRadius: 6,
-
     flexDirection: "row",
-
     justifyContent: "center",
-
     alignItems: "center",
-
     marginBottom: 7,
   },
 
   googleText: {
     fontSize: 17,
-
     fontWeight: "700",
-
     color: "#4285F4",
-
     marginRight: 7,
   },
 
   socialText: {
     fontSize: 10,
-
     fontWeight: "500",
-
     marginLeft: 7,
   },
 
   registerContainer: {
     flexDirection: "row",
-
     justifyContent: "center",
-
     alignItems: "center",
-
     marginTop: 8,
   },
 
@@ -678,7 +639,6 @@ const styles = StyleSheet.create({
 
   registerLink: {
     fontSize: 9,
-
     fontWeight: "700",
   },
 
