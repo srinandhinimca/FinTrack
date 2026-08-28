@@ -40,7 +40,7 @@ const RegisterScreen = () => {
       return;
     }
     try {
-      await signUp(email, password)
+      await signUp(email, password, name)
       alert("Success,Account created")
     } catch (error: any) {
       Alert.alert("Registration Failed",error.message)
