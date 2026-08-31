@@ -15,10 +15,10 @@ function RootNavigation() {
         if (loading) return;
 
         if (session) {
-            router.replace('/Home')
+            router.replace("/(tabs)/Home");
         }
         else {
-            router.replace('/AuthScreen')
+            router.replace("/(auth)/AuthScreen");
         }
     }, [session, loading])
     if (loading) {
