@@ -200,6 +200,7 @@ export default function Login() {
                 styles.input,
                 {
                   color: theme.text,
+                  backgroundColor: "transparent",
                 },
               ]}
               placeholder="laura@example.com"
@@ -552,6 +553,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginLeft: 9,
     paddingVertical: 0,
+  backgroundColor: "transparent",
+  outlineStyle: "none",
+  outlineWidth: 0,
   },
 
   errorContainer: {

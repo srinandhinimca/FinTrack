@@ -19,3 +19,10 @@ Fintrack is a modern and adaptable UI kit built for finance management and digit
    iii.choose the current SDK
 
    iv.eas init --id 8916ebe8-ac07-4371-9e38-633316125ef8
+
+
+   npx expo install @powersync/react-native
+npm expo install @powersync/op-sqlite
+npx expo install @op-engineering/op-sqlite
+npx expo install @supabase/supabase-js
+npx expo install expo-dev-client

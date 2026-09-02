@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "FinTrack",
@@ -7,10 +8,13 @@
     "icon": "./assets/images/icon.png",
     "scheme": "fintrack",
     "userInterfaceStyle": "automatic",
+
     "ios": {
       "icon": "./assets/expo.icon"
     },
+
     "android": {
+      "package": "com.fintrack.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -19,10 +23,12 @@
       },
       "predictiveBackGestureEnabled": false
     },
+
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+
     "plugins": [
       "expo-router",
       [
@@ -35,16 +41,20 @@
       ],
       "expo-sqlite"
     ],
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
+
     "extra": {
       "router": {},
       "eas": {
         "projectId": "8916ebe8-ac07-4371-9e38-633316125ef8"
       }
     },
+
     "owner": "srinandhini"
   }
 }
+
