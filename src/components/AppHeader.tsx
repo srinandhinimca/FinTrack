@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from "@/context/ThemeContext"
 
-interface HeaderProps {
+interface AppHeaderProps {
   userName?: string;
   avatarText?: string;
   onProfilePress?: () => void;
@@ -21,13 +21,13 @@ interface HeaderProps {
 }
 
 
-export default function Header({
+export default function AppHeader({
   userName = "User Name",
   avatarText = "U",
    onProfilePress,
   onLogoutPress,
   onAddPress,
-}: HeaderProps) {
+}: AppHeaderProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { width, height } = useWindowDimensions();
@@ -46,7 +46,7 @@ const isSmallScreen = height < 700;
 
   return (
       <>
-      <View style={[styles.logoHeader, { paddingTop: 20 + insets.top }]}>
+      <View style={[styles.logoHeader, { backgroundColor: theme.primarybg, paddingTop: 20 + insets.top, paddingBottom: 10 }]}>
         {/* <View
           style={[
             styles.logoContainer,
@@ -83,7 +83,7 @@ const isSmallScreen = height < 700;
           </Text>
         </View>
       </View>
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: theme.primarybg }]}>
 
 
       {/* Profile Section */}
@@ -243,9 +243,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-
-    backgroundColor: "#292A37",
-    
   },
 
   profileSection: {

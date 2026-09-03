@@ -11,7 +11,6 @@ import {
 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from "@/lib/supabase"
-import Header from "@/components/dashboard/Header";
 import { useAuth } from '@/context/AuthProvider';
 
 type Transaction = {
@@ -145,43 +144,7 @@ const transactions: Transaction[] = [
 // }
 
 export default function Home() {
-  const [userName, setUserName] = useState<string | undefined>(undefined);
-
-  const { signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error: any) {
-      alert(error.message);
-    }
-  };
-
-  useEffect(() => {
-    async function getUserData() {
-      try {
-        // Fetch the currently authenticated user
-        const { data: { user }, error } = await supabase.auth.getUser();
-
-        if (error) throw error;
-
-        if (user) {
-          // Check common metadata naming conventions for the user's name
-          const name = user.user_metadata?.full_name || user.user_metadata?.name || 'User';
-          setUserName(name);
-        }
-      } catch (error) {
-        console.error('Error fetching user metadata:', error);
-      } finally {
-        //setLoading(false);
-      }
-    }
-
-    getUserData();
-  }, []);
-
-
-const firstLetter = userName ? userName.trim().charAt(0).toUpperCase() : 'U';
+ 
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -192,55 +155,6 @@ const firstLetter = userName ? userName.trim().charAt(0).toUpperCase() : 'U';
       />
 
       <View style={styles.container}>
-
-        {/* HEADER */}
-        {/* <View style={styles.header}>
-
-          <View style={styles.profileSection}>
-
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {firstLetter}
-              </Text>
-            </View>
-
-            <View>
-              <Text style={styles.goodMorning}>
-                Welcome back
-              </Text>
-
-              <Text style={styles.userName}>
-                {userName}
-              </Text>
-            </View>
-
-          </View>
-
-          <TouchableOpacity
-            style={styles.notificationButton}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={17}
-              color="#d8d8df"
-            />
-          </TouchableOpacity>
-
-        </View> */}
-
-        <Header
-          userName={userName}
-          avatarText={firstLetter}
-          onProfilePress={() => {
-            console.log("Profile clicked");
-          }}
-          onLogoutPress={() => {
-            handleSignOut();
-          }}
-          onNotificationPress={() => {
-            console.log("Notification pressed");
-          }}
-        />
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -382,58 +296,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#292a37',
-  },
-
-  /* HEADER */
-
-  header: {
-    height: 76,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#b8a18c',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 9,
-  },
-
-  avatarText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-
-  goodMorning: {
-    color: '#bdbdc7',
-    fontSize: 9,
-    marginBottom: 2,
-  },
-
-  userName: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-
-  notificationButton: {
-    width: 31,
-    height: 31,
-    borderRadius: 8,
-    backgroundColor: '#333440',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 
   /* SCROLL */
