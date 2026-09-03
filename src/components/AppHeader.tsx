@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
   Modal,
   Pressable,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,14 +25,14 @@ interface AppHeaderProps {
 export default function AppHeader({
   userName = "User Name",
   avatarText = "U",
-   onProfilePress,
+  onProfilePress,
   onLogoutPress,
   onAddPress,
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, mode, toggleTheme } = useTheme();
   const { width, height } = useWindowDimensions();
-const isSmallScreen = height < 700;
+  const isSmallScreen = height < 700;
   const [menuVisible, setMenuVisible] = useState(false);
 
   const handleProfile = () => {
@@ -45,7 +46,7 @@ const isSmallScreen = height < 700;
   };
 
   return (
-      <>
+    <>
       <View style={[styles.logoHeader, { backgroundColor: theme.primarybg, paddingTop: 20 + insets.top, paddingBottom: 10 }]}>
         {/* <View
           style={[
@@ -83,13 +84,13 @@ const isSmallScreen = height < 700;
           </Text>
         </View>
       </View>
-    <View style={[styles.header, { backgroundColor: theme.primarybg }]}>
+      <View style={[styles.header, { backgroundColor: theme.primarybg }]}>
 
 
-      {/* Profile Section */}
-      <View style={styles.profileSection}>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
 
-         {/* Profile Round Icon */}
+          {/* Profile Round Icon */}
           <TouchableOpacity
             style={styles.avatar}
             activeOpacity={0.7}
@@ -100,7 +101,7 @@ const isSmallScreen = height < 700;
             </Text>
           </TouchableOpacity>
 
-         {/* User Information */}
+          {/* User Information */}
           <View style={styles.greetingContainer}>
             <Text style={styles.goodMorning}>
               Welcome
@@ -114,9 +115,9 @@ const isSmallScreen = height < 700;
             </Text>
           </View>
 
-      </View>
+        </View>
 
-       {/* Add */}
+        {/* Add */}
         <TouchableOpacity
           style={styles.addButton}
           activeOpacity={0.7}
@@ -128,108 +129,130 @@ const isSmallScreen = height < 700;
             color="#D8D8DF"
           />
         </TouchableOpacity>
-    </View>
+      </View>
 
-     {/* Profile Menu */}
+      {/* Profile Menu */}
+      {/* Profile Menu */}
       <Modal
         visible={menuVisible}
         transparent
-        animationType="fade"
+        animationType="slide" // Optional change to 'slide' for a smooth mobile-app feel
         onRequestClose={() => setMenuVisible(false)}
       >
-        {/* Dark overlay */}
-        <Pressable
-          style={styles.overlay}
-          onPress={() => setMenuVisible(false)}
-        >
-          {/* Menu */}
-          <Pressable style={styles.menuContainer}>
+        {/* Dark backdrop overlay covering the whole screen */}
+        <View style={styles.overlay}>
 
-            {/* Menu Header */}
-            <View style={styles.menuHeader}>
+          {/* Full Screen Menu Container */}
+          <View style={[styles.fullScreenMenu, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
 
-              <View style={styles.menuAvatar}>
-                <Text style={styles.menuAvatarText}>
-                  {avatarText}
-                </Text>
+            {/* Top Section: Header & Close Button */}
+            <View style={styles.menuHeaderRow}>
+              <View style={styles.menuHeader}>
+                <View style={styles.menuAvatar}>
+                  <Text style={styles.menuAvatarText}>
+                    {avatarText}
+                  </Text>
+                </View>
+                <View>
+                  <Text style={styles.menuUserName}>
+                    {userName}
+                  </Text>
+                  <Text style={styles.menuSubtitle}>
+                    Account
+                  </Text>
+                </View>
               </View>
 
-              <View>
-                <Text style={styles.menuUserName}>
-                  {userName}
-                </Text>
-
-                <Text style={styles.menuSubtitle}>
-                  Account
-                </Text>
-              </View>
-
+              {/* X Close icon on the top right */}
+              <TouchableOpacity onPress={() => setMenuVisible(false)} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color="#D8D8DF" />
+              </TouchableOpacity>
             </View>
 
             <View style={styles.separator} />
 
-            {/* Profile */}
-            <TouchableOpacity
-              style={styles.menuItem}
-              activeOpacity={0.7}
-              onPress={handleProfile}
-            >
-              <View style={styles.menuIcon}>
-                <Ionicons
-                  name="person-outline"
-                  size={19}
-                  color="#D8D8DF"
+            {/* Middle Section: Menu Navigation Items */}
+            <View style={styles.menuBody}>
+
+              {/* Option 1: Profile */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                activeOpacity={0.7}
+                onPress={handleProfile}
+              >
+                <View style={styles.menuIconContainer}>
+                  <Ionicons name="person-outline" size={20} color="#D8D8DF" />
+                </View>
+                <Text style={styles.menuText}>Profile Settings</Text>
+                <Ionicons name="chevron-forward" size={17} color="#777888" />
+              </TouchableOpacity>
+
+
+              {/* Option 2: Dark Mode Toggler */}
+              <View style={[styles.menuItem, { backgroundColor: theme.surface }]}>
+                <View style={[styles.menuIconContainer, { backgroundColor: mode === "dark" ? "#1F2937" : "#E2E8F0" }]}>
+                  <Ionicons
+                    name={mode === "dark" ? "moon" : "sunny"}
+                    size={20}
+                    color={mode === "dark" ? "#FFD700" : "#F59E0B"} // Vibrant colors for dark moon & light sun
+                  />
+                </View>
+
+                <Text style={[styles.menuText, { color: theme.text }]}>
+                  Dark Mode
+                </Text>
+
+                <Switch
+                  value={mode === "dark"} // Correctly matches your context's string value state
+                  onValueChange={toggleTheme} // Fires your context's method and handles state automatically
+                  trackColor={{ false: "#CBD5E1", true: theme.primary }}
+                  thumbColor="#FFFFFF"
                 />
               </View>
 
-              <Text style={styles.menuText}>
-                Profile
-              </Text>
-
-              <Ionicons
-                name="chevron-forward"
-                size={17}
-                color="#777888"
-              />
-            </TouchableOpacity>
-
-            {/* Logout */}
-            <TouchableOpacity
-              style={styles.menuItem}
-              activeOpacity={0.7}
-              onPress={handleLogout}
-            >
-              <View
-                style={[
-                  styles.menuIcon,
-                  styles.logoutIcon,
-                ]}
+              {/* Option 3: Notifications Link */}
+              {/* <TouchableOpacity
+                style={styles.menuItem}
+                activeOpacity={0.7}
+                onPress={() => console.log("Notifications pressed")}
               >
+                <View style={styles.menuIconContainer}>
+                  <Ionicons name="notifications-outline" size={20} color="#D8D8DF" />
+                </View>
+                <Text style={styles.menuText}>Notifications</Text>
+                <Ionicons name="chevron-forward" size={17} color="#777888" />
+              </TouchableOpacity> */}
+
+            </View>
+            {/* Bottom Section: Signout Anchored at Bottom */}
+            <View style={styles.menuFooter}>
+              <TouchableOpacity
+                style={[styles.menuItem, styles.logoutItem]}
+                activeOpacity={0.7}
+                onPress={handleLogout}
+              >
+                <View style={[styles.menuIcon, styles.logoutIcon]}>
+                  <Ionicons
+                    name="log-out-outline"
+                    size={19}
+                    color="#FF6B6B"
+                  />
+                </View>
+
+                <Text style={[styles.menuText, styles.logoutText]}>
+                  Logout
+                </Text>
+
                 <Ionicons
-                  name="log-out-outline"
-                  size={19}
-                  color="#FF6B6B"
+                  name="chevron-forward"
+                  size={17}
+                  color="#777888"
                 />
-              </View>
+              </TouchableOpacity>
+            </View>
 
-              <Text
-                style={[
-                  styles.menuText,
-                  styles.logoutText,
-                ]}
-              >
-                Logout
-              </Text>
-
-              <Ionicons
-                name="chevron-forward"
-                size={17}
-                color="#777888"
-              />
-            </TouchableOpacity>
-
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
     </>
   );
@@ -291,7 +314,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  logoHeader:{
+  logoHeader: {
     paddingLeft: 20,
   },
 
@@ -338,15 +361,78 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
 
-  /* Overlay */
+  /* Menu */
 
+  /* Overlay background layer */
   overlay: {
     flex: 1,
-
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // Darkened behind overlay
   },
 
-  /* Menu */
+  /* NEW: Replaces menuContainer layout entirely */
+  fullScreenMenu: {
+    flex: 1,
+    backgroundColor: "#1F202C", // Base primary theme color for whole screen modal
+    paddingHorizontal: 20,
+  },
+
+  menuHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  closeButton: {
+    padding: 8,
+  },
+
+  /* NEW: Tells body contents to stretch and fill the remaining center screen area */
+  menuBody: {
+    flex: 1,
+    marginTop: 20,
+    gap: 8, // Adds structural breathing room directly between menu listing rows
+  },
+
+  menuItem: {
+    height: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#292A37", // Slightly lighter row card background
+    paddingHorizontal: 14,
+    borderRadius: 12,
+  },
+
+  menuIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#333440",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+
+  menuText: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+
+  /* NEW: Forces logout items down into bottom structural boundary container */
+  menuFooter: {
+    borderTopWidth: 1,
+    borderTopColor: "#41424F",
+    paddingTop: 15,
+  },
+
+
+
+  menuIcon: {
+    marginRight: 14,
+  },
+
+
 
   menuContainer: {
     position: "absolute",
@@ -420,41 +506,17 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
 
-  /* Menu Items */
 
-  menuItem: {
-    height: 48,
-
-    flexDirection: "row",
-    alignItems: "center",
-
+  logoutItem: {
+    // Adds visual contrast separating the signout button from common profile links
+    backgroundColor: '#FF6B6B15',
+    borderRadius: 12,
     paddingHorizontal: 12,
-  },
-
-  menuIcon: {
-    width: 32,
-    height: 32,
-
-    borderRadius: 16,
-
-    backgroundColor: "#3A3B48",
-
-    alignItems: "center",
-    justifyContent: "center",
-
-    marginRight: 11,
+    marginTop: 8,
   },
 
   logoutIcon: {
     backgroundColor: "#443136",
-  },
-
-  menuText: {
-    flex: 1,
-
-    color: "#E3E3E7",
-
-    fontSize: 12,
   },
 
   logoutText: {
