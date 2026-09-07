@@ -17,6 +17,9 @@ export const lightTheme = {
   error: "#EF4444",
 
   divider: "#E5E7EB",
+  addButtonBackground: "#147D74",
+  activeTabBackground: "#147D74",
+  inactiveTabBackground: '#777888',
 };
 
 export const darkTheme = {
@@ -37,4 +40,8 @@ export const darkTheme = {
   error: "#FF5C5C",
 
   divider: "#374151",
+  addButtonBackground: "#147D74",
+  activeTabBackground: "#FFFFFF",
+  inactiveTabBackground: '#777888',
+  
 };

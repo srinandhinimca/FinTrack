@@ -12,6 +12,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from "@/lib/supabase"
 import { useAuth } from '@/context/AuthProvider';
+import { useTheme } from "@/context/ThemeContext";
 
 type Transaction = {
   id: string;
@@ -144,17 +145,17 @@ const transactions: Transaction[] = [
 // }
 
 export default function Home() {
- 
+ const { theme, mode } = useTheme();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { backgroundColor: theme.primarybg }]}>
 
       <StatusBar
         barStyle="light-content"
-        backgroundColor="#292a37"
+        backgroundColor={theme.primarybg}
       />
 
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.primarybg }]}>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -282,7 +283,7 @@ export default function Home() {
 
       </View>
 
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -290,12 +291,12 @@ const styles = StyleSheet.create({
 
   safeArea: {
     flex: 1,
-    backgroundColor: '#292a37',
+    
   },
 
   container: {
     flex: 1,
-    backgroundColor: '#292a37',
+    
   },
 
   /* SCROLL */

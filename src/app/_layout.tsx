@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "@/context/AuthProvider";
 import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { ThemeProvider } from "../context/ThemeContext"; 
+import { DatabaseProvider } from "@/database/DatabaseProvider";
 
 function RootNavigation() {
     const { session, loading } = useAuth();
@@ -33,9 +34,11 @@ function RootNavigation() {
 export default function RootLayout() {
     return (
         <AuthProvider>
-          <ThemeProvider>
-            <RootNavigation />
-          </ThemeProvider>
+            <DatabaseProvider>
+                <ThemeProvider>
+                    <RootNavigation />
+                </ThemeProvider>
+            </DatabaseProvider>
         </AuthProvider>
     );
 }

@@ -46,7 +46,7 @@ const isSmallScreen = height < 700;
 
   return (
       <>
-      <View style={[styles.logoHeader, { paddingTop: 20 + insets.top }]}>
+      <View style={[styles.logoHeader, {backgroundColor: theme.primarybg, paddingTop: 20 + insets.top }]}>
         {/* <View
           style={[
             styles.logoContainer,
@@ -118,7 +118,7 @@ const isSmallScreen = height < 700;
 
        {/* Add */}
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton, { backgroundColor: theme.addButtonBackground }]}
           activeOpacity={0.7}
           onPress={onAddPress}
         >
@@ -244,7 +244,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
 
-    backgroundColor: "#292A37",
     
   },
 
@@ -332,8 +331,6 @@ const styles = StyleSheet.create({
     height: 50,
 
     borderRadius: 8,
-
-    backgroundColor: "#333440",
 
     justifyContent: "center",
     alignItems: "center",

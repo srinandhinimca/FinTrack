@@ -6,8 +6,10 @@ import { View } from 'react-native';
 import { useAuth } from '@/context/AuthProvider';
 import { supabase } from "@/lib/supabase"
 import { useEffect, useState } from 'react';
+import { useTheme } from "@/context/ThemeContext";
 
 export default function TabsLayout() {
+  const { theme, mode } = useTheme();
    const insets = useSafeAreaInsets();
    const [userName, setUserName] = useState<string | undefined>(undefined);
      const { signOut } = useAuth();
@@ -63,18 +65,18 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#292a37',
+          backgroundColor: theme.primarybg,
           borderTopColor: '#30313e',
             elevation: 0, // Removes Android shadow lines
             // ─── THE CRITICAL FIX FOR ANDROID SYSTEM BARS ───
           // We calculate a base height (e.g., 60px) and add the system inset
           height: 60 + insets.bottom, 
           // We add padding at the bottom so the icons/labels sit safely above the navigation pills
-          paddingBottom: 7 + insets.bottom, 
+          paddingBottom: 5 + insets.bottom, 
           paddingTop: 5,
         },
-        tabBarActiveTintColor: '#ffffff',
-        tabBarInactiveTintColor: '#777888',
+        tabBarActiveTintColor: theme.activeTabBackground,
+        tabBarInactiveTintColor: theme.inactiveTabBackground,
         tabBarLabelStyle: {
           fontSize: 9,
         },

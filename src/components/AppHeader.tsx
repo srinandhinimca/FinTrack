@@ -119,7 +119,7 @@ export default function AppHeader({
 
         {/* Add */}
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton, { backgroundColor: theme.addButtonBackground }]}
           activeOpacity={0.7}
           onPress={onAddPress}
         >
@@ -352,8 +352,6 @@ const styles = StyleSheet.create({
     height: 50,
 
     borderRadius: 8,
-
-    backgroundColor: "#333440",
 
     justifyContent: "center",
     alignItems: "center",

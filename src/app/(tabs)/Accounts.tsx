@@ -1,4 +1,4 @@
-import React, { useState } from "react"; import {
+import React, { useEffect, useState } from "react"; import {
   View,
   Text,
   StyleSheet,
@@ -9,7 +9,13 @@ import React, { useState } from "react"; import {
   Platform,
   Modal,
   FlatList,
-} from "react-native"; import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"; import { useSafeAreaInsets } from "react-native-safe-area-context"; import { useRouter } from "expo-router"; import { useTheme } from "@/context/ThemeContext";
+} from "react-native"; 
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"; 
+import { useSafeAreaInsets } from "react-native-safe-area-context"; 
+import { useRouter } from "expo-router"; 
+import { useTheme } from "@/context/ThemeContext";
+import { usePowerSync } from '@powersync/react-native';
+
 const ACCOUNT_COLORS = [
   "#147D74", // Blue-green (selected by default)
   "#5F4BB6", // Purple
@@ -28,6 +34,16 @@ const CURRENCY_OPTIONS = [
   "JPY - Japanese Yen"
 ];
 
+type Account = {
+  id: string;
+  user_id: string;
+  name: string;
+  opening_balance: number | null;
+  currency: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export default function AddAccountScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -42,20 +58,94 @@ export default function AddAccountScreen() {
 
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
 
-  const handleSave = () => {
-    if (!accountName.trim()) {
-      alert("Please enter an account name");
-      return;
+  const db = usePowerSync();
+ const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+   useEffect(() => {
+    loadAccounts();
+  }, []);
+
+
+  const loadAccounts = async () => {
+    try {
+      setLoading(true);
+      const result = await db.getAll<Account>(
+        `
+        SELECT *
+        FROM accounts
+        ORDER BY created_at DESC
+        `
+      );
+
+      setAccounts(result);
+
+      console.log('Accounts:', result);
+    } catch (error) {
+      console.error(
+        'Failed to load accounts:',
+        error
+      );
+    } finally {
+      setLoading(false);
     }
-    console.log({
+  };
+
+
+  const handleSave = async () => {
+    // if (!accountName.trim()) {
+    //   alert("Please enter an account name");
+    //   return;
+    // }
+
+    const newAccountId = crypto.randomUUID(); 
+
+     console.log({
+      newAccountId,
       accountName,
       currency,
       openingBalance: parseFloat(openingBalance) || 0,
       description,
       selectedColor,
     });
+
+    await addAccount(newAccountId,"db628083-9fed-4b67-8639-ee8db6fdb2b4", accountName, parseFloat(openingBalance) || 0, currency, selectedColor);
+   
     // Proceed with database mutation logic here
+
+
   };
+
+  async function addAccount(
+    id: string,
+  userId: string,
+  name: string,
+  openingBalance: number,
+  currency: string,
+  color: string
+) {
+  await db.execute(
+    `
+      INSERT INTO accounts (
+        id,
+        user_id,
+        name,
+        opening_balance,
+        currency,
+        color
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+    `,
+    [
+      id,
+      userId,
+      name,
+      openingBalance,
+      currency,
+      color
+    ]
+  );
+}
+
 
   return (
     <KeyboardAvoidingView
