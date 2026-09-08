@@ -4,14 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
   Modal,
-  Pressable,
   Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from "@/context/ThemeContext"
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@/context/ThemeContext";
 
 interface AppHeaderProps {
   userName?: string;
@@ -20,7 +18,6 @@ interface AppHeaderProps {
   onLogoutPress?: () => void;
   onAddPress?: () => void;
 }
-
 
 export default function AppHeader({
   userName = "User Name",
@@ -31,8 +28,6 @@ export default function AppHeader({
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
   const { theme, mode, toggleTheme } = useTheme();
-  const { width, height } = useWindowDimensions();
-  const isSmallScreen = height < 700;
   const [menuVisible, setMenuVisible] = useState(false);
 
   const handleProfile = () => {
@@ -45,17 +40,23 @@ export default function AppHeader({
     onLogoutPress?.();
   };
 
+  const isDark = mode === "dark";
+
   return (
     <>
-      <View style={[styles.logoHeader, { backgroundColor: theme.primarybg, paddingTop: 20 + insets.top, paddingBottom: 10 }]}>
-        {/* <View
-          style={[
-            styles.logoContainer,
-            {
-              marginBottom: isSmallScreen ? 18 : 26,
-            },
-          ]}
-        > */}
+      {/* =========================
+          LOGO HEADER
+      ========================== */}
+      <View
+        style={[
+          styles.logoHeader,
+          {
+            backgroundColor: theme.primarybg,
+            paddingTop: insets.top + 14,
+            paddingBottom: 10,
+          },
+        ]}
+      >
         <View style={styles.logoContainer}>
           <View
             style={[
@@ -84,68 +85,103 @@ export default function AppHeader({
           </Text>
         </View>
       </View>
-      <View style={[styles.header, { backgroundColor: theme.primarybg }]}>
 
-
+      {/* =========================
+          PROFILE / ADD HEADER
+      ========================== */}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: theme.primarybg,
+            borderBottomColor: theme.border,
+          },
+        ]}
+      >
         {/* Profile Section */}
         <View style={styles.profileSection}>
-
-          {/* Profile Round Icon */}
           <TouchableOpacity
-            style={styles.avatar}
+            style={[
+              styles.avatar,
+              {
+                borderColor: isDark
+                  ? "rgba(255,255,255,0.25)"
+                  : "rgba(0,0,0,0.08)",
+              },
+            ]}
             activeOpacity={0.7}
             onPress={() => setMenuVisible(true)}
           >
-            <Text style={styles.avatarText}>
-              {avatarText}
-            </Text>
+            <Text style={styles.avatarText}>{avatarText}</Text>
           </TouchableOpacity>
 
-          {/* User Information */}
           <View style={styles.greetingContainer}>
-            <Text style={styles.goodMorning}>
+            <Text
+              style={[
+                styles.goodMorning,
+                {
+                  color: theme.textSecondary,
+                },
+              ]}
+            >
               Welcome
             </Text>
 
             <Text
-              style={styles.userName}
+              style={[
+                styles.userName,
+                {
+                  color: theme.text,
+                },
+              ]}
               numberOfLines={1}
             >
               {userName}
             </Text>
           </View>
-
         </View>
 
-        {/* Add */}
+        {/* Add Button */}
         <TouchableOpacity
-          style={styles.addButton}
+          style={[
+            styles.addButton,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.border,
+            },
+          ]}
           activeOpacity={0.7}
           onPress={onAddPress}
         >
           <Ionicons
             name="add-circle"
             size={30}
-            color="#D8D8DF"
+            color={theme.primary}
           />
         </TouchableOpacity>
       </View>
 
-      {/* Profile Menu */}
-      {/* Profile Menu */}
+      {/* =========================
+          PROFILE MENU
+      ========================== */}
       <Modal
         visible={menuVisible}
         transparent
-        animationType="slide" // Optional change to 'slide' for a smooth mobile-app feel
+        animationType="slide"
         onRequestClose={() => setMenuVisible(false)}
       >
-        {/* Dark backdrop overlay covering the whole screen */}
         <View style={styles.overlay}>
-
-          {/* Full Screen Menu Container */}
-          <View style={[styles.fullScreenMenu, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
-
-            {/* Top Section: Header & Close Button */}
+          <View
+            style={[
+              styles.fullScreenMenu,
+              {
+                backgroundColor: theme.primarybg,
+                paddingTop: insets.top + 20,
+                paddingBottom: insets.bottom + 20,
+              },
+            ]}
+          >
+            {/* Top Section */}
             <View style={styles.menuHeaderRow}>
               <View style={styles.menuHeader}>
                 <View style={styles.menuAvatar}>
@@ -153,85 +189,171 @@ export default function AppHeader({
                     {avatarText}
                   </Text>
                 </View>
+
                 <View>
-                  <Text style={styles.menuUserName}>
+                  <Text
+                    style={[
+                      styles.menuUserName,
+                      {
+                        color: theme.text,
+                      },
+                    ]}
+                  >
                     {userName}
                   </Text>
-                  <Text style={styles.menuSubtitle}>
+
+                  <Text
+                    style={[
+                      styles.menuSubtitle,
+                      {
+                        color: theme.textSecondary,
+                      },
+                    ]}
+                  >
                     Account
                   </Text>
                 </View>
               </View>
 
-              {/* X Close icon on the top right */}
-              <TouchableOpacity onPress={() => setMenuVisible(false)} style={styles.closeButton}>
-                <Ionicons name="close" size={24} color="#D8D8DF" />
+              <TouchableOpacity
+                onPress={() => setMenuVisible(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color={theme.text}
+                />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.separator} />
+            <View
+              style={[
+                styles.separator,
+                {
+                  backgroundColor: theme.border,
+                },
+              ]}
+            />
 
-            {/* Middle Section: Menu Navigation Items */}
+            {/* Menu Body */}
             <View style={styles.menuBody}>
-
-              {/* Option 1: Profile */}
+              {/* Profile */}
               <TouchableOpacity
-                style={styles.menuItem}
+                style={[
+                  styles.menuItem,
+                  {
+                    backgroundColor: theme.surface,
+                  },
+                ]}
                 activeOpacity={0.7}
                 onPress={handleProfile}
               >
-                <View style={styles.menuIconContainer}>
-                  <Ionicons name="person-outline" size={20} color="#D8D8DF" />
-                </View>
-                <Text style={styles.menuText}>Profile Settings</Text>
-                <Ionicons name="chevron-forward" size={17} color="#777888" />
-              </TouchableOpacity>
-
-
-              {/* Option 2: Dark Mode Toggler */}
-              <View style={[styles.menuItem, { backgroundColor: theme.surface }]}>
-                <View style={[styles.menuIconContainer, { backgroundColor: mode === "dark" ? "#1F2937" : "#E2E8F0" }]}>
+                <View
+                  style={[
+                    styles.menuIconContainer,
+                    {
+                      backgroundColor: theme.primarybg,
+                    },
+                  ]}
+                >
                   <Ionicons
-                    name={mode === "dark" ? "moon" : "sunny"}
+                    name="person-outline"
                     size={20}
-                    color={mode === "dark" ? "#FFD700" : "#F59E0B"} // Vibrant colors for dark moon & light sun
+                    color={theme.text}
                   />
                 </View>
 
-                <Text style={[styles.menuText, { color: theme.text }]}>
+                <Text
+                  style={[
+                    styles.menuText,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
+                  Profile Settings
+                </Text>
+
+                <Ionicons
+                  name="chevron-forward"
+                  size={17}
+                  color={theme.textSecondary}
+                />
+              </TouchableOpacity>
+
+              {/* Dark Mode */}
+              <View
+                style={[
+                  styles.menuItem,
+                  {
+                    backgroundColor: theme.surface,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.menuIconContainer,
+                    {
+                      backgroundColor: isDark
+                        ? "#1F2937"
+                        : "#E2E8F0",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={isDark ? "moon" : "sunny"}
+                    size={20}
+                    color={isDark ? "#FFD700" : "#F59E0B"}
+                  />
+                </View>
+
+                <Text
+                  style={[
+                    styles.menuText,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
                   Dark Mode
                 </Text>
 
                 <Switch
-                  value={mode === "dark"} // Correctly matches your context's string value state
-                  onValueChange={toggleTheme} // Fires your context's method and handles state automatically
-                  trackColor={{ false: "#CBD5E1", true: theme.primary }}
+                  value={isDark}
+                  onValueChange={toggleTheme}
+                  trackColor={{
+                    false: "#CBD5E1",
+                    true: theme.primary,
+                  }}
                   thumbColor="#FFFFFF"
                 />
               </View>
-
-              {/* Option 3: Notifications Link */}
-              {/* <TouchableOpacity
-                style={styles.menuItem}
-                activeOpacity={0.7}
-                onPress={() => console.log("Notifications pressed")}
-              >
-                <View style={styles.menuIconContainer}>
-                  <Ionicons name="notifications-outline" size={20} color="#D8D8DF" />
-                </View>
-                <Text style={styles.menuText}>Notifications</Text>
-                <Ionicons name="chevron-forward" size={17} color="#777888" />
-              </TouchableOpacity> */}
-
             </View>
-            {/* Bottom Section: Signout Anchored at Bottom */}
-            <View style={styles.menuFooter}>
+
+            {/* Logout */}
+            <View
+              style={[
+                styles.menuFooter,
+                {
+                  borderTopColor: theme.border,
+                },
+              ]}
+            >
               <TouchableOpacity
-                style={[styles.menuItem, styles.logoutItem]}
+                style={[
+                  styles.menuItem,
+                  styles.logoutItem,
+                ]}
                 activeOpacity={0.7}
                 onPress={handleLogout}
               >
-                <View style={[styles.menuIcon, styles.logoutIcon]}>
+                <View
+                  style={[
+                    styles.menuIcon,
+                    styles.logoutIcon,
+                  ]}
+                >
                   <Ionicons
                     name="log-out-outline"
                     size={19}
@@ -239,18 +361,22 @@ export default function AppHeader({
                   />
                 </View>
 
-                <Text style={[styles.menuText, styles.logoutText]}>
+                <Text
+                  style={[
+                    styles.menuText,
+                    styles.logoutText,
+                  ]}
+                >
                   Logout
                 </Text>
 
                 <Ionicons
                   name="chevron-forward"
                   size={17}
-                  color="#777888"
+                  color={theme.textSecondary}
                 />
               </TouchableOpacity>
             </View>
-
           </View>
         </View>
       </Modal>
@@ -259,13 +385,40 @@ export default function AppHeader({
 }
 
 const styles = StyleSheet.create({
-  header: {
-    height: 76,
-    paddingHorizontal: 20,
+  /* =========================
+     HEADER
+  ========================== */
 
+  logoHeader: {
+    paddingHorizontal: 20,
+  },
+
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  logoCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 9,
+  },
+
+  logoText: {
+    fontSize: 19,
+    fontWeight: "700",
+  },
+
+  header: {
+    minHeight: 76,
+    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
 
   profileSection: {
@@ -274,22 +427,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  /* Round Profile Icon */
-
   avatar: {
     width: 38,
     height: 38,
     borderRadius: 19,
-
     backgroundColor: "#B8A18C",
-
     justifyContent: "center",
     alignItems: "center",
-
-    marginRight: 9,
-
+    marginRight: 10,
     borderWidth: 1,
-    borderColor: "#FFFFFF55",
   },
 
   avatarText: {
@@ -303,101 +449,75 @@ const styles = StyleSheet.create({
   },
 
   goodMorning: {
-    color: "#BDBDC7",
     fontSize: 9,
     marginBottom: 2,
   },
 
   userName: {
-    color: "#FFFFFF",
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "600",
   },
 
-  logoHeader: {
-    paddingLeft: 20,
-  },
-
-  logoContainer: {
-    flexDirection: "row",
-
-    alignItems: "center",
-  },
-
-  logoCircle: {
-    width: 34,
-
-    height: 34,
-
-    borderRadius: 17,
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    marginRight: 9,
-  },
-
-  logoText: {
-    fontSize: 19,
-
-    fontWeight: "700",
-  },
-
-
-  /* Add Button */
+  /* =========================
+     ADD BUTTON
+  ========================== */
 
   addButton: {
-    width: 50,
-    height: 50,
-
+    width: 42,
+    height: 42,
     borderRadius: 8,
-
-    backgroundColor: "#333440",
-
     justifyContent: "center",
     alignItems: "center",
-
     marginLeft: 10,
+    borderWidth: StyleSheet.hairlineWidth,
   },
 
-  /* Menu */
+  /* =========================
+     MODAL
+  ========================== */
 
-  /* Overlay background layer */
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Darkened behind overlay
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
 
-  /* NEW: Replaces menuContainer layout entirely */
   fullScreenMenu: {
     flex: 1,
-    backgroundColor: "#1F202C", // Base primary theme color for whole screen modal
     paddingHorizontal: 20,
   },
 
   menuHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  menuHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
 
   closeButton: {
     padding: 8,
   },
 
-  /* NEW: Tells body contents to stretch and fill the remaining center screen area */
+  separator: {
+    height: 1,
+    marginVertical: 5,
+  },
+
   menuBody: {
     flex: 1,
     marginTop: 20,
-    gap: 8, // Adds structural breathing room directly between menu listing rows
+    gap: 8,
   },
 
   menuItem: {
     height: 56,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#292A37", // Slightly lighter row card background
     paddingHorizontal: 14,
     borderRadius: 12,
   },
@@ -406,7 +526,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: "#333440",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 14,
@@ -414,70 +533,26 @@ const styles = StyleSheet.create({
 
   menuText: {
     flex: 1,
-    color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "500",
   },
 
-  /* NEW: Forces logout items down into bottom structural boundary container */
   menuFooter: {
     borderTopWidth: 1,
-    borderTopColor: "#41424F",
     paddingTop: 15,
   },
-
-
 
   menuIcon: {
     marginRight: 14,
   },
 
-
-
-  menuContainer: {
-    position: "absolute",
-
-    top: 68,
-    left: 18,
-
-    width: 235,
-
-    backgroundColor: "#30313F",
-
-    borderRadius: 12,
-
-    paddingVertical: 10,
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-
-    elevation: 10,
-  },
-
-  menuHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-
   menuAvatar: {
     width: 35,
     height: 35,
-
     borderRadius: 18,
-
     backgroundColor: "#B8A18C",
-
     alignItems: "center",
     justifyContent: "center",
-
     marginRight: 10,
   },
 
@@ -488,30 +563,17 @@ const styles = StyleSheet.create({
   },
 
   menuUserName: {
-    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "600",
   },
 
   menuSubtitle: {
-    color: "#8F909D",
     fontSize: 9,
     marginTop: 2,
   },
 
-  separator: {
-    height: 1,
-    backgroundColor: "#41424F",
-
-    marginVertical: 5,
-  },
-
-
   logoutItem: {
-    // Adds visual contrast separating the signout button from common profile links
-    backgroundColor: '#FF6B6B15',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    backgroundColor: "#FF6B6B15",
     marginTop: 8,
   },
 

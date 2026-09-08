@@ -1,144 +1,318 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AddCategory from '@/components/AddCategory/AddCategory';
 import AppHeader from '@/components/AppHeader';
-import { View } from 'react-native';
 import { useAuth } from '@/context/AuthProvider';
-import { supabase } from "@/lib/supabase"
+import { useTheme } from '@/context/ThemeContext';
+import { supabase } from '@/lib/supabase';
+import { createCategory } from '@/services/categoryService';
+import { Ionicons } from '@expo/vector-icons';
+import { router, Tabs, usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
-   const insets = useSafeAreaInsets();
-   const [userName, setUserName] = useState<string | undefined>(undefined);
-     const { signOut } = useAuth();
-   
-     const handleSignOut = async () => {
-       try {
-         await signOut();
-       } catch (error: any) {
-         alert(error.message);
-       }
-     };
+  const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+  const { theme } = useTheme();
 
-      useEffect(() => {
-         async function getUserData() {
-           try {
-             // Fetch the currently authenticated user
-             const { data: { user }, error } = await supabase.auth.getUser();
-     
-             if (error) throw error;
-     
-             if (user) {
-               // Check common metadata naming conventions for the user's name
-               const name = user.user_metadata?.full_name || user.user_metadata?.name || 'User';
-               setUserName(name);
-             }
-           } catch (error) {
-             console.error('Error fetching user metadata:', error);
-           } finally {
-             //setLoading(false);
-           }
-         }
-     
-         getUserData();
-       }, []);
+  const [userName, setUserName] =
+    useState<string | undefined>(undefined);
 
-       const firstLetter = userName ? userName.trim().charAt(0).toUpperCase() : 'U';
+  const [showAddCategory, setShowAddCategory] =
+    useState(false);
+
+  const { signOut } = useAuth();
+
+  // =========================================
+  // LOGOUT
+  // =========================================
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error: any) {
+      alert(error.message);
+    }
+  };
+
+  // =========================================
+  // GET USER DATA
+  // =========================================
+
+  useEffect(() => {
+    async function getUserData() {
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (error) throw error;
+
+        if (user) {
+          const name =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            'User';
+
+          setUserName(name);
+        }
+      } catch (error) {
+        console.error(
+          'Error fetching user metadata:',
+          error
+        );
+      }
+    }
+
+    getUserData();
+  }, []);
+
+  // =========================================
+  // USER AVATAR
+  // =========================================
+
+  const firstLetter = userName
+    ? userName.trim().charAt(0).toUpperCase()
+    : 'U';
+
+  // =========================================
+  // CHECK CURRENT PAGE
+  // =========================================
+
+  const isCategoriesPage =
+    pathname.includes('/Categories');
+
+  // =========================================
+  // MAIN LAYOUT
+  // =========================================
+
   return (
-    <>
-    <AppHeader  userName={userName}
-          avatarText={firstLetter}
-          onProfilePress={() => {
-            console.log("Profile clicked");
-          }}
-          onLogoutPress={() => {
-            handleSignOut();
-          }}
-          onAddPress={() => {
-            console.log("Add pressed");
-          }}/>
-
-    <View style={{ flex: 1 }}>
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#292a37',
-          borderTopColor: '#30313e',
-            elevation: 0, // Removes Android shadow lines
-            // ─── THE CRITICAL FIX FOR ANDROID SYSTEM BARS ───
-          // We calculate a base height (e.g., 60px) and add the system inset
-          height: 60 + insets.bottom, 
-          // We add padding at the bottom so the icons/labels sit safely above the navigation pills
-          paddingBottom: 7 + insets.bottom, 
-          paddingTop: 5,
-        },
-        tabBarActiveTintColor: '#ffffff',
-        tabBarInactiveTintColor: '#777888',
-        tabBarLabelStyle: {
-          fontSize: 9,
-        },
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme.primarybg,
       }}
     >
-      <Tabs.Screen
-        name="Home"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="home"
-              size={size}
-              color={color}
-            />
-          ),
+      {/* =====================================
+          MAIN HEADER
+      ===================================== */}
+
+      <AppHeader
+        userName={userName}
+        avatarText={firstLetter}
+
+        onProfilePress={() => {
+          console.log('Profile clicked');
+        }}
+
+        onLogoutPress={() => {
+          handleSignOut();
+        }}
+
+        onAddPress={() => {
+          console.log('Add pressed');
+
+          // =================================
+          // OPEN ADD CATEGORY OVERLAY
+          // =================================
+
+          if (isCategoriesPage) {
+            console.log(
+              'Opening Add Category overlay'
+            );
+
+            setShowAddCategory(true);
+          }
         }}
       />
 
-      <Tabs.Screen
-        name="Transactions"
-        options={{
-          title: 'Transactions',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="stats-chart-outline"
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
+      {/* =====================================
+          TAB NAVIGATION
+      ===================================== */}
 
-      <Tabs.Screen
-        name="Categories"
-        options={{
-          title: 'Categories',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="card-outline"
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
+      <View style={{ flex: 1 }}>
+        <Tabs
+          screenOptions={{
+            headerShown: false,
 
-      <Tabs.Screen
-        name="Accounts"
-        options={{
-          title: 'Accounts',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="person-outline"
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-    </Tabs>
+            tabBarStyle: {
+              backgroundColor: theme.primarybg,
+              borderTopColor: theme.border,
+
+              elevation: 0,
+
+              height:
+                60 + insets.bottom,
+
+              paddingBottom:
+                5 + insets.bottom,
+
+              paddingTop: 4,
+            },
+            tabBarItemStyle: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+            tabBarActiveTintColor: theme.primary,
+tabBarInactiveTintColor: theme.secondaryText,
+
+            tabBarLabelStyle: {
+              fontSize: 10,
+              fontWeight: 500,
+            },
+          }}
+        >
+          {/* =================================
+              HOME
+          ================================= */}
+
+          <Tabs.Screen
+            name="Home"
+            options={{
+              title: 'Home',
+
+              tabBarIcon: ({
+                color,
+                size,
+              }) => (
+                <Ionicons
+                  name="home"
+                  size={size + 3}
+                  color={color}
+                />
+              ),
+            }}
+          />
+
+          {/* =================================
+              TRANSACTIONS
+          ================================= */}
+
+          <Tabs.Screen
+            name="Transactions"
+            options={{
+              title: 'Transactions',
+
+              tabBarIcon: ({
+                color,
+                size,
+              }) => (
+                <Ionicons
+                  name="stats-chart-outline"
+                  size={size + 3}
+                  color={color}
+                />
+              ),
+            }}
+          />
+
+          {/* =================================
+              CATEGORIES
+          ================================= */}
+
+          <Tabs.Screen
+            name="Categories"
+            options={{
+              title: 'Categories',
+
+              tabBarIcon: ({
+                color,
+                size,
+              }) => (
+                <Ionicons
+                  name="card-outline"
+                  size={size + 3}
+                  color={color}
+                />
+              ),
+            }}
+          />
+
+          {/* =================================
+              ACCOUNTS
+          ================================= */}
+
+          <Tabs.Screen
+            name="Accounts"
+            options={{
+              title: 'Accounts',
+
+              tabBarIcon: ({
+                color,
+                size,
+              }) => (
+                <Ionicons
+                  name="person-outline"
+                  size={size + 3}
+                  color={color}
+                />
+              ),
+            }}
+          />
+        </Tabs>
+      </View>
+
+      {/* =====================================
+          ADD CATEGORY OVERLAY
+      ===================================== */}
+
+      {showAddCategory && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: '#292a37',
+            zIndex: 1000,
+          }}
+        >
+          <AddCategory
+            onClose={() => {
+              setShowAddCategory(false);
+            }}
+
+            onDone={async (category) => {
+  try {
+    console.log('Saving category:', category);
+
+    const savedCategory = await createCategory({
+      name: category.name,
+      type: category.type,
+      icon: category.icon,
+      color: category.color,
+    });
+
+    console.log(
+      'Category saved:',
+      savedCategory
+    );
+
+    setShowAddCategory(false);
+    router.replace({
+      pathname: pathname,
+      params: {
+        refresh: Date.now().toString(),
+      },
+    });
+  } catch (error: any) {
+    console.error(
+      'Error saving category:',
+      error
+    );
+
+    alert(
+      error?.message ||
+      'Failed to save category.'
+    );
+  }
+}}
+          />
+        </View>
+      )}
     </View>
-    
-    </>
-    
   );
 }

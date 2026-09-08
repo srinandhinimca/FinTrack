@@ -1,17 +1,12 @@
-import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
   ScrollView,
-  TouchableOpacity,
   StatusBar,
+  StyleSheet,
+  View
 } from 'react-native';
 
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { supabase } from "@/lib/supabase"
-import { useAuth } from '@/context/AuthProvider';
+import { useTheme } from '@/context/ThemeContext';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type Transaction = {
   id: string;
@@ -144,26 +139,41 @@ const transactions: Transaction[] = [
 // }
 
 export default function Home() {
- 
+  const { theme, mode } = useTheme();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-
+    <View
+      style={[
+        styles.safeArea,
+        {
+          backgroundColor: theme.primarybg,
+        },
+      ]}
+    >
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#292a37"
+        barStyle={
+          mode === 'dark'
+            ? 'light-content'
+            : 'dark-content'
+        }
+        backgroundColor={theme.primarybg}
       />
 
-      <View style={styles.container}>
-
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: theme.primarybg,
+          },
+        ]}
+      >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={
-            styles.scrollContent
-          }
+          contentContainerStyle={styles.scrollContent}
         >
 
           {/* BALANCE CARD */}
+
           {/* <View style={styles.balanceCard}>
 
             <View style={styles.shapeOne} />
@@ -211,6 +221,7 @@ export default function Home() {
           </View> */}
 
           {/* ACTION BUTTONS */}
+
           {/* <View style={styles.actionsRow}>
 
             <ActionButton
@@ -218,7 +229,7 @@ export default function Home() {
               label="Expense"
             />
 
-             <ActionButton
+            <ActionButton
               icon="add-circle-outline"
               label="Income"
             />
@@ -241,6 +252,7 @@ export default function Home() {
           </View> */}
 
           {/* TRANSACTIONS HEADER */}
+
           {/* <View style={styles.sectionHeader}>
 
             <Text style={styles.sectionTitle}>
@@ -256,6 +268,7 @@ export default function Home() {
           </View> */}
 
           {/* TRANSACTIONS */}
+
           {/* <View style={styles.transactionsContainer}>
 
             {transactions.map((item) => (
@@ -270,6 +283,7 @@ export default function Home() {
         </ScrollView>
 
         {/* FLOATING QR BUTTON */}
+
         {/* <TouchableOpacity
           style={styles.scanButton}
         >
@@ -281,8 +295,7 @@ export default function Home() {
         </TouchableOpacity> */}
 
       </View>
-
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -290,12 +303,10 @@ const styles = StyleSheet.create({
 
   safeArea: {
     flex: 1,
-    backgroundColor: '#292a37',
   },
 
   container: {
     flex: 1,
-    backgroundColor: '#292a37',
   },
 
   /* SCROLL */
@@ -524,6 +535,5 @@ const styles = StyleSheet.create({
       height: 2,
     },
   },
-}
 
-);
+});
