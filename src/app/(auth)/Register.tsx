@@ -510,6 +510,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 9,
     paddingVertical: 0,
+    backgroundColor: "transparent",
+  outlineStyle: "none",
+  outlineWidth: 0,
   },
 
   errorContainer: {

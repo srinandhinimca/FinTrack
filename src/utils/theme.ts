@@ -16,7 +16,7 @@ export const lightTheme = {
 
   error: "#EF4444",
 
-  divider: "#E5E7EB",
+  divider: "#374151",
 };
 
 export const darkTheme = {

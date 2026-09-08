@@ -1,3 +1,4 @@
+import AddAccount from '@/components/AddAccount/AddAccount';
 import AddCategory from '@/components/AddCategory/AddCategory';
 import AppHeader from '@/components/AppHeader';
 import { useAuth } from '@/context/AuthProvider';
@@ -15,11 +16,10 @@ export default function TabsLayout() {
   const pathname = usePathname();
   const { theme } = useTheme();
 
-  const [userName, setUserName] =
-    useState<string | undefined>(undefined);
+  const [userName, setUserName] = useState<string | undefined>(undefined);
 
-  const [showAddCategory, setShowAddCategory] =
-    useState(false);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showAddAccount, setShowAddAccount] = useState(false);
 
   const { signOut } = useAuth();
 
@@ -80,8 +80,8 @@ export default function TabsLayout() {
   // CHECK CURRENT PAGE
   // =========================================
 
-  const isCategoriesPage =
-    pathname.includes('/Categories');
+  const isCategoriesPage =pathname.includes('/Categories');
+  const isAccountsPage =  pathname.includes('/accounts') || pathname.includes('/Accounts');
 
   // =========================================
   // MAIN LAYOUT
@@ -111,20 +111,20 @@ export default function TabsLayout() {
         }}
 
         onAddPress={() => {
-          console.log('Add pressed');
+  console.log('Add pressed');
 
-          // =================================
-          // OPEN ADD CATEGORY OVERLAY
-          // =================================
+  if (isCategoriesPage) {
+    console.log('Opening Add Category overlay');
+    setShowAddCategory(true);
+    return;
+  }
 
-          if (isCategoriesPage) {
-            console.log(
-              'Opening Add Category overlay'
-            );
-
-            setShowAddCategory(true);
-          }
-        }}
+  if (isAccountsPage) {
+    console.log('Opening Add Account overlay');
+    setShowAddAccount(true);
+    return;
+  }
+}}
       />
 
       {/* =====================================
@@ -313,6 +313,44 @@ tabBarInactiveTintColor: theme.secondaryText,
           />
         </View>
       )}
+   {/* =====================================
+    ADD ACCOUNT OVERLAY
+===================================== */}
+
+{showAddAccount && (
+  <View
+    style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: theme.primarybg,
+      zIndex: 1000,
+    }}
+  >
+    <AddAccount
+      onClose={() => {
+        setShowAddAccount(false);
+      }}
+
+      onDone={() => {
+        console.log('Account saved:', 'refreshing Accounts');
+
+        // Close Add Account
+        setShowAddAccount(false);
+
+        // Same refresh method used by Categories
+        router.replace({
+          pathname: pathname as any,
+          params: {
+            refresh: Date.now().toString(),
+          },
+        });
+      }}
+    />
+  </View>
+)}
     </View>
   );
 }

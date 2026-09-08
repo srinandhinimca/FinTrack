@@ -1,22 +1,20 @@
+import ThemeToggle from "@/components/ThemeToggle";
+import { useAuth } from '@/context/AuthProvider';
+import { useTheme } from "@/context/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
   Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    useWindowDimensions,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from 'react'
-import InputField from '@/components/Forms/InputField'
-import PrimaryButton from '@/components/Button/PrimaryButton'
-import { useAuth } from '@/context/AuthProvider'
-import { useRouter } from 'expo-router'
-import ThemeToggle from "@/components/ThemeToggle"
-import { useTheme } from "@/context/ThemeContext"
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true)
@@ -573,6 +571,9 @@ const styles = StyleSheet.create({
     marginLeft: 9,
 
     paddingVertical: 0,
+    backgroundColor: "transparent",
+    outlineStyle: "none",
+    outlineWidth: 0,
   },
 
   errorContainer: {
