@@ -1,20 +1,20 @@
-import React, { useState } from "react";
+import { useTheme } from "@/context/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import {
-  View,
-  Text,
+  Modal,
   StyleSheet,
+  Switch,
+  Text,
   TouchableOpacity,
   useWindowDimensions,
-  Modal,
-  Pressable,
-  Switch,
+  View
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from "@/context/ThemeContext"
 
 interface AppHeaderProps {
   userName?: string;
+  userId?: string;
   avatarText?: string;
   onProfilePress?: () => void;
   onLogoutPress?: () => void;
@@ -24,6 +24,7 @@ interface AppHeaderProps {
 
 export default function AppHeader({
   userName = "User Name",
+  userId,
   avatarText = "U",
   onProfilePress,
   onLogoutPress,
