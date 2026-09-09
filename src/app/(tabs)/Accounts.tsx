@@ -1,35 +1,20 @@
 import { useTheme } from "@/context/ThemeContext";
-import {
-  Account,
-  getAccounts,
-} from "@/services/accountService";
+import { Account, getAccounts, } from "@/services/accountService";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
 
 export default function Accounts() {
   const { theme } = useTheme();
-
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const { refresh } = useLocalSearchParams<{ refresh?: string }>();
-
   const loadAccounts = useCallback(async () => {
     try {
       setLoading(true);
-
       const data = await getAccounts();
-
       setAccounts(data);
-
       console.log("Accounts loaded:", data);
     } catch (error) {
       console.error("Failed to load accounts:", error);
@@ -37,7 +22,6 @@ export default function Accounts() {
       setLoading(false);
     }
   }, []);
-
   useEffect(() => {
     loadAccounts();
   }, [refresh,loadAccounts]);
@@ -46,28 +30,22 @@ export default function Accounts() {
     if (currency?.startsWith("USD")) {
       return "$";
     }
-
     if (currency?.startsWith("EUR")) {
       return "€";
     }
-
     if (currency?.startsWith("GBP")) {
       return "£";
     }
-
     if (currency?.startsWith("JPY")) {
       return "¥";
     }
-
     return "₹";
   };
-
   const formatBalance = (
     balance: number | null,
     currency: string
   ) => {
     const amount = Number(balance ?? 0);
-
     return `${getCurrencySymbol(currency)}${amount.toLocaleString(
       "en-IN",
       {
@@ -76,7 +54,6 @@ export default function Accounts() {
       }
     )}`;
   };
-
   return (
     <View
       style={[

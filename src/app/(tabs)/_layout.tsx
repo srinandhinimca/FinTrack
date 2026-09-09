@@ -1,5 +1,6 @@
 import AddAccount from '@/components/AddAccount/AddAccount';
 import AddCategory from '@/components/AddCategory/AddCategory';
+import TransactionDetail from '@/components/transaction/TransactionDetail';
 import AppHeader from '@/components/AppHeader';
 import { useAuth } from '@/context/AuthProvider';
 import { useTheme } from '@/context/ThemeContext';
@@ -16,10 +17,18 @@ export default function TabsLayout() {
   const pathname = usePathname();
   const { theme } = useTheme();
 
-  const [userName, setUserName] = useState<string | undefined>(undefined);
+  const [userName, setUserName] = useState<string | undefined>(
+    undefined
+  );
 
-  const [showAddCategory, setShowAddCategory] = useState(false);
-  const [showAddAccount, setShowAddAccount] = useState(false);
+  const [showAddCategory, setShowAddCategory] =
+    useState(false);
+
+  const [showAddAccount, setShowAddAccount] =
+    useState(false);
+
+  const [showTransactionDetail, setShowTransactionDetail] =
+    useState(false);
 
   const { signOut } = useAuth();
 
@@ -80,8 +89,16 @@ export default function TabsLayout() {
   // CHECK CURRENT PAGE
   // =========================================
 
-  const isCategoriesPage =pathname.includes('/Categories');
-  const isAccountsPage =  pathname.includes('/accounts') || pathname.includes('/Accounts');
+  const isCategoriesPage =
+    pathname.includes('/Categories');
+
+  const isAccountsPage =
+    pathname.includes('/accounts') ||
+    pathname.includes('/Accounts');
+
+  const isTransactionsPage =
+    pathname.includes('/Transactions') ||
+    pathname.includes('/transactions');
 
   // =========================================
   // MAIN LAYOUT
@@ -111,20 +128,47 @@ export default function TabsLayout() {
         }}
 
         onAddPress={() => {
-  console.log('Add pressed');
+          console.log('Add pressed');
 
-  if (isCategoriesPage) {
-    console.log('Opening Add Category overlay');
-    setShowAddCategory(true);
-    return;
-  }
+          // -----------------------------------
+          // CATEGORIES
+          // -----------------------------------
 
-  if (isAccountsPage) {
-    console.log('Opening Add Account overlay');
-    setShowAddAccount(true);
-    return;
-  }
-}}
+          if (isCategoriesPage) {
+            console.log(
+              'Opening Add Category overlay'
+            );
+
+            setShowAddCategory(true);
+            return;
+          }
+
+          // -----------------------------------
+          // ACCOUNTS
+          // -----------------------------------
+
+          if (isAccountsPage) {
+            console.log(
+              'Opening Add Account overlay'
+            );
+
+            setShowAddAccount(true);
+            return;
+          }
+
+          // -----------------------------------
+          // TRANSACTIONS
+          // -----------------------------------
+
+          if (isTransactionsPage) {
+            console.log(
+              'Opening Transaction Detail'
+            );
+
+            setShowTransactionDetail(true);
+            return;
+          }
+        }}
       />
 
       {/* =====================================
@@ -150,17 +194,21 @@ export default function TabsLayout() {
 
               paddingTop: 4,
             },
-            tabBarItemStyle: {
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
 
-            tabBarActiveTintColor: theme.primary,
-tabBarInactiveTintColor: theme.secondaryText,
+            tabBarItemStyle: {
+              alignItems: 'center',
+              justifyContent: 'center',
+            },
+
+            tabBarActiveTintColor:
+              theme.primary,
+
+            tabBarInactiveTintColor:
+              theme.secondaryText,
 
             tabBarLabelStyle: {
               fontSize: 10,
-              fontWeight: 500,
+              fontWeight: '500',
             },
           }}
         >
@@ -266,7 +314,9 @@ tabBarInactiveTintColor: theme.secondaryText,
             left: 0,
             right: 0,
             bottom: 0,
+
             backgroundColor: '#292a37',
+
             zIndex: 1000,
           }}
         >
@@ -276,81 +326,132 @@ tabBarInactiveTintColor: theme.secondaryText,
             }}
 
             onDone={async (category) => {
-  try {
-    console.log('Saving category:', category);
+              try {
+                console.log(
+                  'Saving category:',
+                  category
+                );
 
-    const savedCategory = await createCategory({
-      name: category.name,
-      type: category.type,
-      icon: category.icon,
-      color: category.color,
-    });
+                const savedCategory =
+                  await createCategory({
+                    name: category.name,
+                    type: category.type,
+                    icon: category.icon,
+                    color: category.color,
+                  });
 
-    console.log(
-      'Category saved:',
-      savedCategory
-    );
+                console.log(
+                  'Category saved:',
+                  savedCategory
+                );
 
-    setShowAddCategory(false);
-    router.replace({
-      pathname: pathname,
-      params: {
-        refresh: Date.now().toString(),
-      },
-    });
-  } catch (error: any) {
-    console.error(
-      'Error saving category:',
-      error
-    );
+                setShowAddCategory(false);
 
-    alert(
-      error?.message ||
-      'Failed to save category.'
-    );
-  }
-}}
+                router.replace({
+                  pathname: pathname,
+                  params: {
+                    refresh:
+                      Date.now().toString(),
+                  },
+                });
+              } catch (error: any) {
+                console.error(
+                  'Error saving category:',
+                  error
+                );
+
+                alert(
+                  error?.message ||
+                    'Failed to save category.'
+                );
+              }
+            }}
           />
         </View>
       )}
-   {/* =====================================
-    ADD ACCOUNT OVERLAY
-===================================== */}
 
-{showAddAccount && (
-  <View
-    style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: theme.primarybg,
-      zIndex: 1000,
-    }}
-  >
-    <AddAccount
-      onClose={() => {
-        setShowAddAccount(false);
-      }}
+      {/* =====================================
+          ADD ACCOUNT OVERLAY
+      ===================================== */}
 
-      onDone={() => {
-        console.log('Account saved:', 'refreshing Accounts');
+      {showAddAccount && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
 
-        // Close Add Account
-        setShowAddAccount(false);
+            backgroundColor:
+              theme.primarybg,
 
-        // Same refresh method used by Categories
-        router.replace({
-          pathname: pathname as any,
-          params: {
-            refresh: Date.now().toString(),
-          },
-        });
-      }}
-    />
-  </View>
-)}
+            zIndex: 1000,
+          }}
+        >
+          <AddAccount
+            onClose={() => {
+              setShowAddAccount(false);
+            }}
+
+            onDone={() => {
+              console.log(
+                'Account saved:',
+                'refreshing Accounts'
+              );
+
+              setShowAddAccount(false);
+
+              router.replace({
+                pathname: pathname as any,
+                params: {
+                  refresh:
+                    Date.now().toString(),
+                },
+              });
+            }}
+          />
+        </View>
+      )}
+
+      {/* =====================================
+          TRANSACTION DETAIL OVERLAY
+      ===================================== */}
+
+      {showTransactionDetail && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+
+            backgroundColor:
+              theme.primarybg,
+
+            zIndex: 1000,
+          }}
+        >
+          <TransactionDetail
+            onClose={() => {
+              setShowTransactionDetail(false);
+            }}
+
+            onSaved={() => {
+              setShowTransactionDetail(false);
+
+              router.replace({
+                pathname: pathname as any,
+                params: {
+                  refresh:
+                    Date.now().toString(),
+                },
+              });
+            }}
+          />
+        </View>
+      )}
     </View>
   );
 }
