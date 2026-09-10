@@ -1,539 +1,1492 @@
+import TransactionDetail from "@/components/transaction/TransactionDetail";
+import { useTheme } from "@/context/ThemeContext";
+import { supabase } from "@/lib/supabase";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
-  View
-} from 'react-native';
+  Text,
+  View,
+} from "react-native";
 
-import { useTheme } from '@/context/ThemeContext';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-
-type Transaction = {
-  id: string;
-  title: string;
-  date: string;
-  amount: string;
-  type: 'income' | 'expense';
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+type Account = {
+  account_id: number;
+  id?: string;
+  name: string;
+  currency: string;
+  color: string | null;
 };
 
-const transactions: Transaction[] = [
-  {
-    id: '1',
-    title: 'Transfer to John',
-    date: '09:30 AM  •  09/09/2025',
-    amount: '-$9.00',
-    type: 'expense',
-    icon: 'send-outline',
-  },
-  {
-    id: '2',
-    title: 'Top Up Shoppe Pay',
-    date: '09:15 AM  •  09/09/2025',
-    amount: '-$12.00',
-    type: 'expense',
-    icon: 'arrow-up-circle-outline',
-  },
-  {
-    id: '3',
-    title: 'Pay Electricity',
-    date: '09:08 AM  •  09/09/2025',
-    amount: '-$15.00',
-    type: 'expense',
-    icon: 'lightning-bolt-outline',
-  },
-  {
-    id: '4',
-    title: 'Receive from Alex',
-    date: '08:30 AM  •  09/09/2025',
-    amount: '+$31.00',
-    type: 'income',
-    icon: 'arrow-down-circle-outline',
-  },
-  {
-    id: '5',
-    title: 'Receive from Beryl',
-    date: '08:00 AM  •  09/09/2025',
-    amount: '+$25.00',
-    type: 'income',
-    icon: 'arrow-down-circle-outline',
-  },
+type Category = {
+  category_id: number;
+  id?: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+};
+
+type Transaction = {
+  transaction_id: number;
+  account_id: number;
+  category_id: number | null;
+  transaction_type: "expense" | "income" | "transfer" | string;
+  amount: number;
+  transaction_date: string;
+  description: string | null;
+  notes: string | null;
+  to_account_id: number | null;
+};
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
-// function ActionButton({
-//   icon,
-//   label,
-// }: {
-//   icon: keyof typeof Ionicons.glyphMap;
-//   label: string;
-// }) {
-//   return (
-//     <TouchableOpacity style={styles.actionContainer}>
-//       <View style={styles.actionCircle}>
-//         <Ionicons
-//           name={icon}
-//           size={21}
-//           color="#d9d9e2"
-//         />
-//       </View>
-
-//       <Text style={styles.actionText}>
-//         {label}
-//       </Text>
-//     </TouchableOpacity>
-//   );
-// }
-
-// function TransactionItem({
-//   item,
-// }: {
-//   item: Transaction;
-// }) {
-//   const isIncome = item.type === 'income';
-
-//   return (
-//     <TouchableOpacity style={styles.transactionItem}>
-
-//       <View
-//         style={[
-//           styles.transactionIcon,
-//           isIncome
-//             ? styles.incomeIconBackground
-//             : styles.expenseIconBackground,
-//         ]}
-//       >
-//         <MaterialCommunityIcons
-//           name={item.icon}
-//           size={18}
-//           color={
-//             isIncome
-//               ? '#36c979'
-//               : '#8b86bc'
-//           }
-//         />
-//       </View>
-
-//       <View style={styles.transactionInfo}>
-//         <Text style={styles.transactionTitle}>
-//           {item.title}
-//         </Text>
-
-//         <Text style={styles.transactionDate}>
-//           {item.date}
-//         </Text>
-//       </View>
-
-//       <Text
-//         style={[
-//           styles.transactionAmount,
-//           isIncome
-//             ? styles.incomeAmount
-//             : styles.expenseAmount,
-//         ]}
-//       >
-//         {item.amount}
-//       </Text>
-
-//     </TouchableOpacity>
-//   );
-// }
+const FALLBACK_CATEGORY_COLORS = [
+  "#F59E0B",
+  "#3B82F6",
+  "#8B5CF6",
+  "#22C55E",
+  "#EF4444",
+];
 
 export default function Home() {
   const { theme, mode } = useTheme();
 
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  );
+
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedAccount, setSelectedAccount] =
+    useState<Account | null>(null);
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  const [showAccounts, setShowAccounts] = useState(false);
+  const [showTransactionDetail, setShowTransactionDetail] =
+    useState(false);
+
+  const [transactionType, setTransactionType] =
+    useState<"expense" | "income">("expense");
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // ---------------------------------------------------------
+  // HELPERS
+  // ---------------------------------------------------------
+
+  const getDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatAmount = (amount: number) => {
+    return `$${Math.abs(amount).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  const getCategory = (categoryId: number | null) => {
+    if (categoryId === null) {
+      return null;
+    }
+
+    return (
+      categories.find(
+        (category) => category.category_id === categoryId
+      ) || null
+    );
+  };
+
+  const getCategoryColor = (
+    category: Category | null,
+    index = 0
+  ) => {
+    return (
+      category?.color ||
+      FALLBACK_CATEGORY_COLORS[
+        index % FALLBACK_CATEGORY_COLORS.length
+      ]
+    );
+  };
+
+  const getTransactionTitle = (transaction: Transaction) => {
+    const category = getCategory(transaction.category_id);
+
+    if (category?.name) {
+      return category.name;
+    }
+
+    if (transaction.description) {
+      return transaction.description;
+    }
+
+    if (transaction.transaction_type === "income") {
+      return "Income";
+    }
+
+    if (transaction.transaction_type === "transfer") {
+      return "Transfer";
+    }
+
+    return "Expense";
+  };
+
+  const getTransactionIcon = (transaction: Transaction) => {
+    const category = getCategory(transaction.category_id);
+
+    if (category?.icon) {
+      return category.icon;
+    }
+
+    if (transaction.transaction_type === "income") {
+      return "cash-plus";
+    }
+
+    if (transaction.transaction_type === "transfer") {
+      return "swap-horizontal";
+    }
+
+    return "cash-minus";
+  };
+
+  const getTransactionIconColor = (transaction: Transaction) => {
+    const category = getCategory(transaction.category_id);
+
+    if (category?.color) {
+      return category.color;
+    }
+
+    if (transaction.transaction_type === "income") {
+      return "#22C55E";
+    }
+
+    if (transaction.transaction_type === "transfer") {
+      return "#F59E0B";
+    }
+
+    return "#EF4444";
+  };
+
+  // ---------------------------------------------------------
+  // LOAD ACCOUNTS + CATEGORIES
+  // ---------------------------------------------------------
+
+  const loadAccountsAndCategories = useCallback(async () => {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setAccounts([]);
+        setSelectedAccount(null);
+        setCategories([]);
+        return;
+      }
+
+      const { data: accountData, error: accountError } =
+        await supabase
+          .from("accounts")
+          .select("account_id, id, name, currency, color")
+          .eq("user_id", user.id)
+          .order("account_id", { ascending: true });
+
+      if (accountError) {
+        console.error("Error loading accounts:", accountError);
+        setAccounts([]);
+        setSelectedAccount(null);
+      } else {
+        const loadedAccounts = (accountData as Account[]) || [];
+
+        setAccounts(loadedAccounts);
+
+        setSelectedAccount((current) => {
+          if (current) {
+            const exists = loadedAccounts.some(
+              (account) =>
+                account.account_id === current.account_id
+            );
+
+            if (exists) {
+              return current;
+            }
+          }
+
+          return loadedAccounts.length > 0
+            ? loadedAccounts[0]
+            : null;
+        });
+      }
+
+      const { data: categoryData, error: categoryError } =
+        await supabase
+          .from("categories")
+          .select("category_id, id, name, icon, color")
+          .or(`user_id.is.null,user_id.eq.${user.id}`)
+          .order("name", { ascending: true });
+
+      if (categoryError) {
+        console.error("Error loading categories:", categoryError);
+        setCategories([]);
+      } else {
+        setCategories((categoryData as Category[]) || []);
+      }
+    } catch (error) {
+      console.error("loadAccountsAndCategories:", error);
+    }
+  }, []);
+
+  // ---------------------------------------------------------
+  // LOAD MONTH TRANSACTIONS
+  // ---------------------------------------------------------
+
+  const loadTransactions = useCallback(async () => {
+    if (!selectedAccount) {
+      setTransactions([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const year = selectedMonth.getFullYear();
+      const month = selectedMonth.getMonth();
+
+      const startDate = new Date(year, month, 1);
+      const nextMonthDate = new Date(year, month + 1, 1);
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .select(
+          `
+            transaction_id,
+            account_id,
+            category_id,
+            transaction_type,
+            amount,
+            transaction_date,
+            description,
+            notes,
+            to_account_id
+          `
+        )
+        .eq("account_id", selectedAccount.account_id)
+        .gte("transaction_date", getDateString(startDate))
+        .lt("transaction_date", getDateString(nextMonthDate))
+        .order("transaction_date", { ascending: false })
+        .order("transaction_id", { ascending: false });
+
+      if (error) {
+        console.error("Error loading transactions:", error);
+        setTransactions([]);
+      } else {
+        setTransactions((data as Transaction[]) || []);
+      }
+    } catch (error) {
+      console.error("loadTransactions:", error);
+      setTransactions([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [selectedAccount, selectedMonth]);
+
+  useEffect(() => {
+    loadAccountsAndCategories();
+  }, [loadAccountsAndCategories]);
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
+
+  // ---------------------------------------------------------
+  // REFRESH
+  // ---------------------------------------------------------
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadAccountsAndCategories();
+    await loadTransactions();
+  };
+
+  // ---------------------------------------------------------
+  // MONTH NAVIGATION
+  // ---------------------------------------------------------
+
+  const goToPreviousMonth = () => {
+    setSelectedMonth(
+      new Date(
+        selectedMonth.getFullYear(),
+        selectedMonth.getMonth() - 1,
+        1
+      )
+    );
+  };
+
+  const goToNextMonth = () => {
+    setSelectedMonth(
+      new Date(
+        selectedMonth.getFullYear(),
+        selectedMonth.getMonth() + 1,
+        1
+      )
+    );
+  };
+
+  // ---------------------------------------------------------
+  // FINANCIAL TOTALS
+  // ---------------------------------------------------------
+
+  const incomeTotal = useMemo(() => {
+    return transactions
+      .filter(
+        (transaction) =>
+          transaction.transaction_type === "income"
+      )
+      .reduce(
+        (total, transaction) =>
+          total + Number(transaction.amount || 0),
+        0
+      );
+  }, [transactions]);
+
+  const expenseTotal = useMemo(() => {
+    return transactions
+      .filter(
+        (transaction) =>
+          transaction.transaction_type === "expense"
+      )
+      .reduce(
+        (total, transaction) =>
+          total + Number(transaction.amount || 0),
+        0
+      );
+  }, [transactions]);
+
+  const balance = incomeTotal - expenseTotal;
+
+  // ---------------------------------------------------------
+  // RECENT TRANSACTIONS
+  // ---------------------------------------------------------
+
+  const recentTransactions = useMemo(() => {
+    return transactions.slice(0, 4);
+  }, [transactions]);
+
+  // ---------------------------------------------------------
+  // OPEN ADD TRANSACTION
+  // ---------------------------------------------------------
+
+  const openAddTransaction = (
+    type: "expense" | "income"
+  ) => {
+    if (!selectedAccount) {
+      setShowAccounts(true);
+      return;
+    }
+
+    setTransactionType(type);
+    setShowTransactionDetail(true);
+  };
+
+  // ---------------------------------------------------------
+  // TRANSACTION DETAIL
+  // ---------------------------------------------------------
+
+  if (showTransactionDetail && selectedAccount) {
+    return (
+      <View
+        style={[
+          styles.screen,
+          { backgroundColor: theme.primarybg },
+        ]}
+      >
+        <StatusBar
+          barStyle={
+            mode === "dark" ? "light-content" : "dark-content"
+          }
+          backgroundColor={theme.primarybg}
+        />
+
+        <TransactionDetail
+          initialTransactionType={transactionType}
+          onClose={() => setShowTransactionDetail(false)}
+          onSaved={() => {
+            setShowTransactionDetail(false);
+            loadTransactions();
+          }}
+        />
+      </View>
+    );
+  }
+
   return (
     <View
       style={[
-        styles.safeArea,
-        {
-          backgroundColor: theme.primarybg,
-        },
+        styles.screen,
+        { backgroundColor: theme.primarybg },
       ]}
     >
       <StatusBar
         barStyle={
-          mode === 'dark'
-            ? 'light-content'
-            : 'dark-content'
+          mode === "dark" ? "light-content" : "dark-content"
         }
         backgroundColor={theme.primarybg}
       />
 
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor: theme.primarybg,
-          },
-        ]}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.primary}
+          />
+        }
+        contentContainerStyle={styles.scrollContent}
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+        {/* =====================================================
+            MONTH + ACCOUNT
+        ===================================================== */}
+
+        <View style={styles.selectorRow}>
+          <View
+            style={[
+              styles.monthSelector,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <Pressable
+              onPress={goToPreviousMonth}
+              style={styles.monthArrow}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={17}
+                color={theme.text}
+              />
+            </Pressable>
+
+            <Text
+              style={[
+                styles.monthText,
+                { color: theme.text },
+              ]}
+              numberOfLines={1}
+            >
+              {MONTH_NAMES[selectedMonth.getMonth()]}{" "}
+              {selectedMonth.getFullYear()}
+            </Text>
+
+            <Pressable
+              onPress={goToNextMonth}
+              style={styles.monthArrow}
+            >
+              <Ionicons
+                name="chevron-forward"
+                size={17}
+                color={theme.text}
+              />
+            </Pressable>
+          </View>
+
+          <Pressable
+            onPress={() => setShowAccounts(true)}
+            style={[
+              styles.accountSelector,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <View style={styles.accountSelectorLeft}>
+              <View
+                style={[
+                  styles.accountIcon,
+                  {
+                    backgroundColor:
+                      `${selectedAccount?.color || theme.primary}18`,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="person"
+                  size={14}
+                  color={
+                    selectedAccount?.color || theme.primary
+                  }
+                />
+              </View>
+
+              <Text
+                style={[
+                  styles.accountText,
+                  { color: theme.text },
+                ]}
+                numberOfLines={1}
+              >
+                {selectedAccount?.name || "Select Account"}
+              </Text>
+            </View>
+
+            <Ionicons
+              name="chevron-down"
+              size={16}
+              color={theme.secondaryText}
+            />
+          </Pressable>
+        </View>
+
+        {/* =====================================================
+            BALANCE HERO
+        ===================================================== */}
+
+        <View
+          style={[
+            styles.balanceHero,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+            },
+          ]}
         >
-
-          {/* BALANCE CARD */}
-
-          {/* <View style={styles.balanceCard}>
-
-            <View style={styles.shapeOne} />
-            <View style={styles.shapeTwo} />
-            <View style={styles.shapeThree} />
-
-            <View style={styles.balanceContent}>
-
-              <Text style={styles.balanceLabel}>
+          <View style={styles.balanceHeroTop}>
+            <View>
+              <Text
+                style={[
+                  styles.balanceHeroLabel,
+                  { color: theme.secondaryText },
+                ]}
+              >
                 Total Balance
               </Text>
 
-              <View style={styles.balanceRow}>
-
-                <Text style={styles.balance}>
-                  $18,223.08
-                </Text>
-
-                <TouchableOpacity>
-                  <Ionicons
-                    name="eye-outline"
-                    size={21}
-                    color="#dce9e7"
-                  />
-                </TouchableOpacity>
-
-              </View>
-
-              <View style={styles.accountRow}>
-
-                <Text style={styles.accountText}>
-                  Account : 311 2322 2342
-                </Text>
-
-                <Ionicons
-                  name="copy-outline"
-                  size={12}
-                  color="#d6e6e3"
-                />
-
-              </View>
-
+              <Text
+                style={[
+                  styles.balanceHeroAmount,
+                  { color: theme.text },
+                ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {balance < 0 ? "-" : ""}
+                {formatAmount(balance)}
+              </Text>
             </View>
 
-          </View> */}
-
-          {/* ACTION BUTTONS */}
-
-          {/* <View style={styles.actionsRow}>
-
-            <ActionButton
-              icon="add-circle-outline"
-              label="Expense"
-            />
-
-            <ActionButton
-              icon="add-circle-outline"
-              label="Income"
-            />
-
-            <ActionButton
-              icon="arrow-up-outline"
-              label="Transfer"
-            />
-
-            <ActionButton
-              icon="arrow-down-outline"
-              label="Request"
-            />
-
-            <ActionButton
-              icon="people-outline"
-              label="Pay Bills"
-            />
-
-          </View> */}
-
-          {/* TRANSACTIONS HEADER */}
-
-          {/* <View style={styles.sectionHeader}>
-
-            <Text style={styles.sectionTitle}>
-              Last Transaction
-            </Text>
-
-            <TouchableOpacity>
-              <Text style={styles.viewAll}>
-                View All
-              </Text>
-            </TouchableOpacity>
-
-          </View> */}
-
-          {/* TRANSACTIONS */}
-
-          {/* <View style={styles.transactionsContainer}>
-
-            {transactions.map((item) => (
-              <TransactionItem
-                key={item.id}
-                item={item}
+            <View
+              style={[
+                styles.balanceStatus,
+                {
+                  backgroundColor:
+                    balance >= 0 ? "#ECFDF5" : "#FFF1F2",
+                },
+              ]}
+            >
+              <Ionicons
+                name={
+                  balance >= 0
+                    ? "trending-up"
+                    : "trending-down"
+                }
+                size={15}
+                color={
+                  balance >= 0 ? "#16A34A" : "#EF4444"
+                }
               />
-            ))}
 
-          </View> */}
+              <Text
+                style={{
+                  color:
+                    balance >= 0 ? "#16A34A" : "#EF4444",
+                  fontSize: 9,
+                  fontWeight: "700",
+                }}
+              >
+                {balance >= 0 ? "Positive" : "Negative"}
+              </Text>
+            </View>
+          </View>
 
-        </ScrollView>
-
-        {/* FLOATING QR BUTTON */}
-
-        {/* <TouchableOpacity
-          style={styles.scanButton}
-        >
-          <MaterialCommunityIcons
-            name="qrcode-scan"
-            size={23}
-            color="#ffffff"
+          <View
+            style={[
+              styles.balanceBottomLine,
+              { backgroundColor: theme.border },
+            ]}
           />
-        </TouchableOpacity> */}
 
-      </View>
+          <View style={styles.balanceStats}>
+            <View>
+              <Text
+                style={[
+                  styles.balanceStatLabel,
+                  { color: theme.secondaryText },
+                ]}
+              >
+                Income
+              </Text>
+
+              <Text
+                style={[
+                  styles.balanceStatAmount,
+                  { color: "#16A34A" },
+                ]}
+              >
+                {formatAmount(incomeTotal)}
+              </Text>
+            </View>
+
+            <View style={styles.balanceStatDivider} />
+
+            <View>
+              <Text
+                style={[
+                  styles.balanceStatLabel,
+                  { color: theme.secondaryText },
+                ]}
+              >
+                Expenses
+              </Text>
+
+              <Text
+                style={[
+                  styles.balanceStatAmount,
+                  { color: "#EF4444" },
+                ]}
+              >
+                {formatAmount(expenseTotal)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* =====================================================
+            RECENT TRANSACTIONS
+        ===================================================== */}
+
+        <View style={styles.sectionHeader}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: theme.text },
+            ]}
+          >
+            Recent Transactions
+          </Text>
+
+          <Text
+            style={[
+              styles.viewAll,
+              { color: theme.primary },
+            ]}
+          >
+            View All
+          </Text>
+        </View>
+
+        {loading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator
+              size="small"
+              color={theme.primary}
+            />
+          </View>
+        ) : recentTransactions.length === 0 ? (
+          <View
+            style={[
+              styles.emptyTransactions,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.emptyTransactionIcon,
+                {
+                  backgroundColor:
+                    `${theme.primary}15`,
+                },
+              ]}
+            >
+              <Ionicons
+                name="receipt-outline"
+                size={23}
+                color={theme.primary}
+              />
+            </View>
+
+            <View style={styles.emptyTransactionText}>
+              <Text
+                style={[
+                  styles.emptyTransactionTitle,
+                  { color: theme.text },
+                ]}
+              >
+                No transactions yet
+              </Text>
+
+              <Text
+                style={[
+                  styles.emptyTransactionSubtitle,
+                  { color: theme.secondaryText },
+                ]}
+              >
+                Add your first expense or income below.
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View
+            style={[
+              styles.transactionCard,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            {recentTransactions.map(
+              (transaction, index) => {
+                const icon =
+                  getTransactionIcon(transaction);
+                const iconColor =
+                  getTransactionIconColor(transaction);
+
+                const isIncome =
+                  transaction.transaction_type === "income";
+
+                const isTransfer =
+                  transaction.transaction_type === "transfer";
+
+                return (
+                  <View key={transaction.transaction_id}>
+                    <Pressable
+                      style={styles.transactionRow}
+                    >
+                      <View
+                        style={[
+                          styles.transactionIcon,
+                          {
+                            backgroundColor:
+                              `${iconColor}18`,
+                          },
+                        ]}
+                      >
+                        <MaterialCommunityIcons
+                          name={icon as any}
+                          size={18}
+                          color={iconColor}
+                        />
+                      </View>
+
+                      <View style={styles.transactionInfo}>
+                        <Text
+                          style={[
+                            styles.transactionTitle,
+                            { color: theme.text },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {getTransactionTitle(transaction)}
+                        </Text>
+
+                        <Text
+                          style={[
+                            styles.transactionDate,
+                            { color: theme.secondaryText },
+                          ]}
+                        >
+                          {formatDateLabel(
+                            transaction.transaction_date
+                          )}
+                        </Text>
+                      </View>
+
+                      <Text
+                        style={[
+                          styles.transactionAmount,
+                          {
+                            color: isIncome
+                              ? "#16A34A"
+                              : isTransfer
+                              ? "#D97706"
+                              : "#EF4444",
+                          },
+                        ]}
+                      >
+                        {isIncome ? "+" : ""}
+                        {formatAmount(
+                          Number(transaction.amount || 0)
+                        )}
+                      </Text>
+
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color={theme.secondaryText}
+                      />
+                    </Pressable>
+
+                    {index < recentTransactions.length - 1 && (
+                      <View
+                        style={[
+                          styles.transactionDivider,
+                          {
+                            backgroundColor: theme.border,
+                          },
+                        ]}
+                      />
+                    )}
+                  </View>
+                );
+              }
+            )}
+          </View>
+        )}
+
+        {/* =====================================================
+            BOTTOM ACTIONS
+        ===================================================== */}
+
+        <View
+          style={[
+            styles.bottomLine,
+            { backgroundColor: theme.border },
+          ]}
+        />
+
+        <View style={styles.actionRow}>
+          <Pressable
+            onPress={() => openAddTransaction("expense")}
+            style={[
+              styles.actionButton,
+              {
+                backgroundColor: "#FFF1F2",
+                borderColor: "#FECDD3",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.actionIcon,
+                { backgroundColor: "#FFE4E6" },
+              ]}
+            >
+              <Ionicons
+                name="arrow-up"
+                size={18}
+                color="#EF4444"
+              />
+            </View>
+
+            <Text
+              style={[
+                styles.actionText,
+                { color: "#DC2626" },
+              ]}
+            >
+              Add Expense
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => openAddTransaction("income")}
+            style={[
+              styles.actionButton,
+              {
+                backgroundColor: "#ECFDF5",
+                borderColor: "#BBF7D0",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.actionIcon,
+                { backgroundColor: "#DCFCE7" },
+              ]}
+            >
+              <Ionicons
+                name="arrow-down"
+                size={18}
+                color="#16A34A"
+              />
+            </View>
+
+            <Text
+              style={[
+                styles.actionText,
+                { color: "#15803D" },
+              ]}
+            >
+              Add Income
+            </Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.bottomSpace} />
+      </ScrollView>
+
+      {/* =======================================================
+          ACCOUNT SELECTION
+      ======================================================= */}
+
+      <Modal
+        visible={showAccounts}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAccounts(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowAccounts(false)}
+        >
+          <Pressable
+            style={[
+              styles.accountModal,
+              { backgroundColor: theme.card },
+            ]}
+            onPress={() => {}}
+          >
+            <View style={styles.modalHeader}>
+              <Text
+                style={[
+                  styles.modalTitle,
+                  { color: theme.text },
+                ]}
+              >
+                Select Account
+              </Text>
+
+              <Pressable
+                onPress={() => setShowAccounts(false)}
+              >
+                <Ionicons
+                  name="close"
+                  size={21}
+                  color={theme.secondaryText}
+                />
+              </Pressable>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+            >
+              {accounts.length === 0 ? (
+                <View style={styles.noAccountBox}>
+                  <Ionicons
+                    name="wallet-outline"
+                    size={28}
+                    color={theme.secondaryText}
+                  />
+
+                  <Text
+                    style={[
+                      styles.noAccountText,
+                      { color: theme.secondaryText },
+                    ]}
+                  >
+                    No accounts found
+                  </Text>
+                </View>
+              ) : (
+                accounts.map((account) => {
+                  const isSelected =
+                    selectedAccount?.account_id ===
+                    account.account_id;
+
+                  return (
+                    <Pressable
+                      key={account.account_id}
+                      onPress={() => {
+                        setSelectedAccount(account);
+                        setShowAccounts(false);
+                      }}
+                      style={[
+                        styles.accountOption,
+                        {
+                          borderBottomColor: theme.border,
+                        },
+                        isSelected && {
+                          backgroundColor:
+                            `${theme.primary}08`,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.accountOptionIcon,
+                          {
+                            backgroundColor:
+                              `${account.color || theme.primary}18`,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="person"
+                          size={16}
+                          color={
+                            account.color || theme.primary
+                          }
+                        />
+                      </View>
+
+                      <View style={styles.accountOptionInfo}>
+                        <Text
+                          style={[
+                            styles.accountOptionName,
+                            { color: theme.text },
+                          ]}
+                        >
+                          {account.name}
+                        </Text>
+
+                        <Text
+                          style={[
+                            styles.accountOptionCurrency,
+                            { color: theme.secondaryText },
+                          ]}
+                        >
+                          {account.currency}
+                        </Text>
+                      </View>
+
+                      {isSelected && (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={21}
+                          color={theme.primary}
+                        />
+                      )}
+                    </Pressable>
+                  );
+                })
+              )}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
+function formatDateLabel(dateString: string) {
+  const date = new Date(`${dateString}T00:00:00`);
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 const styles = StyleSheet.create({
-
-  safeArea: {
+  screen: {
     flex: 1,
   },
-
-  container: {
-    flex: 1,
-  },
-
-  /* SCROLL */
 
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-
-  /* BALANCE */
-
-  balanceCard: {
-    height: 114,
-    borderRadius: 11,
-    backgroundColor: '#168c83',
-    overflow: 'hidden',
-    position: 'relative',
-  },
-
-  balanceContent: {
-    zIndex: 10,
     paddingHorizontal: 12,
     paddingTop: 12,
+    paddingBottom: 30,
   },
 
-  balanceLabel: {
-    color: '#bde0dc',
-    fontSize: 8,
-    marginBottom: 3,
+  // ---------------------------------------------------------
+  // MONTH + ACCOUNT
+  // ---------------------------------------------------------
+
+  selectorRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
   },
 
-  balanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  monthSelector: {
+    flex: 1,
+    height: 42,
+    borderWidth: 1,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
   },
 
-  balance: {
-    color: '#fff',
-    fontSize: 25,
-    fontWeight: '600',
+  monthArrow: {
+    width: 28,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  accountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
+  monthText: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+
+  accountSelector: {
+    flex: 1,
+    height: 42,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  accountSelectorLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    minWidth: 0,
+  },
+
+  accountIcon: {
+    width: 25,
+    height: 25,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
   },
 
   accountText: {
-    color: '#b9ded9',
-    fontSize: 8,
-    marginRight: 7,
+    flex: 1,
+    fontSize: 11,
+    fontWeight: "600",
   },
 
-  /* CARD SHAPES */
+  // ---------------------------------------------------------
+  // BALANCE HERO
+  // ---------------------------------------------------------
 
-  shapeOne: {
-    position: 'absolute',
-    width: 170,
-    height: 170,
-    backgroundColor: '#ffffff0b',
-    transform: [
-      { rotate: '45deg' },
-    ],
-    right: -60,
-    top: -80,
-  },
-
-  shapeTwo: {
-    position: 'absolute',
-    width: 150,
-    height: 150,
-    backgroundColor: '#063e3a22',
-    transform: [
-      { rotate: '45deg' },
-    ],
-    right: 40,
-    top: -75,
-  },
-
-  shapeThree: {
-    position: 'absolute',
-    width: 130,
-    height: 130,
-    backgroundColor: '#ffffff08',
-    transform: [
-      { rotate: '45deg' },
-    ],
-    left: 100,
-    bottom: -100,
-  },
-
-  /* ACTIONS */
-
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 3,
-    marginTop: 12,
+  balanceHero: {
+    minHeight: 122,
+    borderWidth: 1,
+    borderRadius: 15,
+    padding: 12,
     marginBottom: 14,
   },
 
-  actionContainer: {
-    alignItems: 'center',
-    width: '23%',
+  balanceHeroTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
 
-  actionCircle: {
-    width: 35,
-    height: 35,
-    borderRadius: 18,
-    backgroundColor: '#3a3b48',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 5,
+  balanceHeroLabel: {
+    fontSize: 10,
+    marginBottom: 4,
   },
 
-  actionText: {
-    color: '#b8b8c2',
-    fontSize: 8,
+  balanceHeroAmount: {
+    fontSize: 25,
+    fontWeight: "800",
   },
 
-  /* SECTION */
+  balanceStatus: {
+    height: 27,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  balanceBottomLine: {
+    height: StyleSheet.hairlineWidth,
+    marginTop: 10,
+    marginBottom: 9,
+  },
+
+  balanceStats: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  balanceStatLabel: {
+    fontSize: 9,
+    marginBottom: 3,
+  },
+
+  balanceStatAmount: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  balanceStatDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 25,
+    backgroundColor: "#CBD5E1",
+    marginHorizontal: 22,
+  },
+
+  // ---------------------------------------------------------
+  // SECTION
+  // ---------------------------------------------------------
 
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 7,
   },
 
   sectionTitle: {
-    color: '#f0f0f3',
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: "700",
   },
 
   viewAll: {
-    color: '#bdbdc8',
-    fontSize: 9,
+    fontSize: 10,
+    fontWeight: "600",
   },
 
-  /* TRANSACTIONS */
+  // ---------------------------------------------------------
+  // INCOME + EXPENSES
+  // ---------------------------------------------------------
 
-  transactionsContainer: {
-    gap: 5,
+
+  // ---------------------------------------------------------
+  // RECENT TRANSACTIONS
+  // ---------------------------------------------------------
+
+  transactionCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 2,
   },
 
-  transactionItem: {
-    height: 47,
-    backgroundColor: '#30313f',
-    borderRadius: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 9,
+  transactionRow: {
+    minHeight: 52,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   transactionIcon: {
-    width: 27,
-    height: 27,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 9,
-  },
-
-  expenseIconBackground: {
-    backgroundColor: '#35384a',
-  },
-
-  incomeIconBackground: {
-    backgroundColor: '#303d3d',
+    width: 33,
+    height: 33,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
   },
 
   transactionInfo: {
     flex: 1,
+    minWidth: 0,
   },
 
   transactionTitle: {
-    color: '#e3e3e7',
-    fontSize: 9,
-    fontWeight: '500',
-    marginBottom: 2,
+    fontSize: 12,
+    fontWeight: "600",
   },
 
   transactionDate: {
-    color: '#8f909d',
-    fontSize: 7,
+    fontSize: 9,
+    marginTop: 3,
   },
 
   transactionAmount: {
+    fontSize: 11,
+    fontWeight: "700",
+    marginHorizontal: 7,
+  },
+
+  transactionDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 54,
+  },
+
+  loadingBox: {
+    height: 130,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  emptyTransactions: {
+    minHeight: 86,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 11,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  emptyTransactionIcon: {
+    width: 39,
+    height: 39,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 9,
+  },
+
+  emptyTransactionText: {
+    flex: 1,
+  },
+
+  emptyTransactionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  emptyTransactionSubtitle: {
     fontSize: 9,
-    fontWeight: '500',
+    marginTop: 3,
   },
 
-  expenseAmount: {
-    color: '#e4e4e8',
+  // ---------------------------------------------------------
+  // ACTION BUTTONS
+  // ---------------------------------------------------------
+
+  bottomLine: {
+    height: StyleSheet.hairlineWidth,
+    marginTop: 15,
+    marginBottom: 12,
   },
 
-  incomeAmount: {
-    color: '#38c979',
+  actionRow: {
+    flexDirection: "row",
+    gap: 9,
   },
 
-  /* FLOATING BUTTON */
-
-  scanButton: {
-    position: 'absolute',
-    bottom: 25,
-    left: '50%',
-    marginLeft: -22,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#279f94',
-    justifyContent: 'center',
-    alignItems: 'center',
-
-    elevation: 8,
-
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+  actionButton: {
+    flex: 1,
+    height: 52,
+    borderWidth: 1,
+    borderRadius: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
+  actionIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 7,
+  },
+
+  actionText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+  bottomSpace: {
+    height: 25,
+  },
+
+  // ---------------------------------------------------------
+  // ACCOUNT MODAL
+  // ---------------------------------------------------------
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
+  },
+
+  accountModal: {
+    width: "100%",
+    maxHeight: "65%",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingBottom: 18,
+    overflow: "hidden",
+  },
+
+  modalHeader: {
+    height: 55,
+    paddingHorizontal: 17,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(128,128,128,0.15)",
+  },
+
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  accountOption: {
+    minHeight: 58,
+    paddingHorizontal: 17,
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+
+  accountOptionIcon: {
+    width: 37,
+    height: 37,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+
+  accountOptionInfo: {
+    flex: 1,
+  },
+
+  accountOptionName: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  accountOptionCurrency: {
+    fontSize: 9,
+    marginTop: 3,
+  },
+
+  noAccountBox: {
+    minHeight: 150,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  noAccountText: {
+    fontSize: 11,
+  },
 });

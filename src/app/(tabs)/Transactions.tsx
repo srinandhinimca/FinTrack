@@ -412,9 +412,7 @@ export default function Transactions() {
   }, [selectedAccount]);
 
   const formatAmount = (amount: number) => {
-    return `${currencySymbol}${Math.abs(
-      amount
-    ).toLocaleString("en-IN", {
+    return `$${Math.abs(amount).toLocaleString("en-IN", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
@@ -579,7 +577,7 @@ export default function Transactions() {
       transaction.transaction_type ===
       "expense"
     ) {
-      return `- ${amount}`;
+      return amount;
     }
 
     return amount;
@@ -718,260 +716,231 @@ export default function Transactions() {
             </Text>
           </View>
 
-          <View style={styles.topHeaderActions}>
-            <Pressable
-              onPress={openAddTransaction}
-              style={styles.topHeaderButton}
-              hitSlop={8}
-            >
-              <Ionicons
-                name="add"
-                size={28}
-                color={theme.text}
-              />
-            </Pressable>
 
-            <Pressable
-              style={styles.topHeaderButton}
-              hitSlop={8}
-            >
-              <Ionicons
-                name="ellipsis-vertical"
-                size={22}
-                color={theme.text}
-              />
-            </Pressable>
-          </View>
         </View>
 
         {/* =================================================
-            MONTH SELECTOR
+            MONTH + ACCOUNT SELECTORS
         ================================================= */}
 
-        <View
-          style={[
-            styles.monthSelector,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.border,
-            },
-          ]}
-        >
-          <Pressable
-            onPress={goToPreviousMonth}
-            style={styles.monthArrow}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={21}
-              color={theme.text}
-            />
-          </Pressable>
+        <View style={styles.selectorRow}>
+          {/* MONTH */}
 
-          <Text
+          <View
             style={[
-              styles.monthText,
-              {
-                color: theme.text,
-              },
-            ]}
-          >
-            {MONTH_NAMES[
-              selectedMonth.getMonth()
-            ]}{" "}
-            {selectedMonth.getFullYear()}
-          </Text>
-
-          <Pressable
-            onPress={goToNextMonth}
-            style={styles.monthArrow}
-          >
-            <Ionicons
-              name="chevron-forward"
-              size={21}
-              color={theme.text}
-            />
-          </Pressable>
-        </View>
-
-        {/* =================================================
-            ACCOUNT SELECTOR
-        ================================================= */}
-
-        <View style={styles.accountSection}>
-          <Text
-            style={[
-              styles.sectionLabel,
-              {
-                color:
-                  theme.secondaryText,
-              },
-            ]}
-          >
-            Account
-          </Text>
-
-          <Pressable
-            onPress={() => {
-              setShowTypes(false);
-              setShowAccounts(
-                !showAccounts
-              );
-            }}
-            style={[
-              styles.accountButton,
+              styles.monthSelector,
               {
                 backgroundColor: theme.card,
                 borderColor: theme.border,
               },
             ]}
           >
-            <View
-              style={styles.accountButtonLeft}
+            <Pressable
+              onPress={goToPreviousMonth}
+              style={styles.monthArrow}
+              hitSlop={5}
             >
-              <View
-                style={[
-                  styles.accountDot,
-                  {
-                    backgroundColor:
-                      selectedAccount?.color ||
-                      "#6366F1",
-                  },
-                ]}
+              <Ionicons
+                name="chevron-back"
+                size={17}
+                color={theme.text}
               />
+            </Pressable>
 
-              <Text
-                style={[
-                  styles.accountButtonText,
-                  {
-                    color: theme.text,
-                  },
-                ]}
-              >
-                {selectedAccount?.name ||
-                  "Select Account"}
-              </Text>
-            </View>
-
-            <Ionicons
-              name={
-                showAccounts
-                  ? "chevron-up"
-                  : "chevron-down"
-              }
-              size={19}
-              color={theme.secondaryText}
-            />
-          </Pressable>
-
-          {showAccounts && (
-            <View
+            <Text
               style={[
-                styles.dropdown,
+                styles.monthText,
                 {
-                  backgroundColor:
-                    theme.card,
-                  borderColor:
-                    theme.border,
+                  color: theme.text,
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {MONTH_NAMES[
+                selectedMonth.getMonth()
+              ]}{" "}
+              {selectedMonth.getFullYear()}
+            </Text>
+
+            <Pressable
+              onPress={goToNextMonth}
+              style={styles.monthArrow}
+              hitSlop={5}
+            >
+              <Ionicons
+                name="chevron-forward"
+                size={17}
+                color={theme.text}
+              />
+            </Pressable>
+          </View>
+
+          {/* ACCOUNT */}
+
+          <View style={styles.accountSection}>
+            <Pressable
+              onPress={() => {
+                setShowTypes(false);
+                setShowAccounts(!showAccounts);
+              }}
+              style={[
+                styles.accountButton,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.border,
                 },
               ]}
             >
-              {accounts.length === 0 ? (
-                <Text
+              <View style={styles.accountButtonLeft}>
+                <View
                   style={[
-                    styles.emptyDropdownText,
+                    styles.accountUserIcon,
                     {
-                      color:
-                        theme.secondaryText,
+                      backgroundColor:
+                        `${selectedAccount?.color || "#6366F1"}18`,
                     },
                   ]}
                 >
-                  No accounts found
+                  <Ionicons
+                    name="person"
+                    size={14}
+                    color={
+                      selectedAccount?.color ||
+                      "#6366F1"
+                    }
+                  />
+                </View>
+
+                <Text
+                  style={[
+                    styles.accountButtonText,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {selectedAccount?.name ||
+                    "Select Account"}
                 </Text>
-              ) : (
-                accounts.map((account) => {
-                  const isSelected =
-                    selectedAccount?.account_id ===
-                    account.account_id;
+              </View>
 
-                  return (
-                    <Pressable
-                      key={account.account_id}
-                      onPress={() => {
-                        setSelectedAccount(
-                          account
-                        );
-                        setShowAccounts(
-                          false
-                        );
-                      }}
-                      style={[
-                        styles.accountOption,
-                        isSelected && {
-                          backgroundColor:
-                            theme.background,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={
-                          styles.accountOptionLeft
-                        }
+              <Ionicons
+                name={
+                  showAccounts
+                    ? "chevron-up"
+                    : "chevron-down"
+                }
+                size={16}
+                color={theme.secondaryText}
+              />
+            </Pressable>
+
+            {showAccounts && (
+              <View
+                style={[
+                  styles.dropdown,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                {accounts.length === 0 ? (
+                  <Text
+                    style={[
+                      styles.emptyDropdownText,
+                      {
+                        color: theme.secondaryText,
+                      },
+                    ]}
+                  >
+                    No accounts found
+                  </Text>
+                ) : (
+                  accounts.map((account) => {
+                    const isSelected =
+                      selectedAccount?.account_id ===
+                      account.account_id;
+
+                    return (
+                      <Pressable
+                        key={account.account_id}
+                        onPress={() => {
+                          setSelectedAccount(account);
+                          setShowAccounts(false);
+                        }}
+                        style={[
+                          styles.accountOption,
+                          isSelected && {
+                            backgroundColor:
+                              theme.background,
+                          },
+                        ]}
                       >
-                        <View
-                          style={[
-                            styles.accountDot,
-                            {
-                              backgroundColor:
+                        <View style={styles.accountOptionLeft}>
+                          <View
+                            style={[
+                              styles.accountUserIcon,
+                              {
+                                backgroundColor:
+                                  `${account.color || "#6366F1"}18`,
+                              },
+                            ]}
+                          >
+                            <Ionicons
+                              name="person"
+                              size={14}
+                              color={
                                 account.color ||
-                                "#6366F1",
-                            },
-                          ]}
-                        />
+                                "#6366F1"
+                              }
+                            />
+                          </View>
 
-                        <View>
-                          <Text
-                            style={[
-                              styles.accountOptionText,
-                              {
-                                color:
-                                  theme.text,
-                              },
-                            ]}
-                          >
-                            {account.name}
-                          </Text>
+                          <View>
+                            <Text
+                              style={[
+                                styles.accountOptionText,
+                                {
+                                  color: theme.text,
+                                },
+                              ]}
+                            >
+                              {account.name}
+                            </Text>
 
-                          <Text
-                            style={[
-                              styles.accountIdText,
-                              {
-                                color:
-                                  theme.secondaryText,
-                              },
-                            ]}
-                          >
-                            Account ID:{" "}
-                            {
-                              account.account_id
-                            }
-                          </Text>
+                            <Text
+                              style={[
+                                styles.accountIdText,
+                                {
+                                  color:
+                                    theme.secondaryText,
+                                },
+                              ]}
+                            >
+                              {account.currency}
+                            </Text>
+                          </View>
                         </View>
-                      </View>
 
-                      {isSelected && (
-                        <Ionicons
-                          name="checkmark"
-                          size={20}
-                          color="#6366F1"
-                        />
-                      )}
-                    </Pressable>
-                  );
-                })
-              )}
-            </View>
-          )}
+                        {isSelected && (
+                          <Ionicons
+                            name="checkmark"
+                            size={19}
+                            color={
+                              theme.primary ||
+                              "#6366F1"
+                            }
+                          />
+                        )}
+                      </Pressable>
+                    );
+                  })
+                )}
+              </View>
+            )}
+          </View>
         </View>
 
         {/* =================================================
@@ -1008,32 +977,18 @@ export default function Transactions() {
               />
             </View>
 
-            <View style={styles.summaryTextBox}>
-              <Text
-                style={[
-                  styles.summaryLabel,
-                  {
-                    color:
-                      theme.secondaryText,
-                  },
-                ]}
-              >
-                Income
-              </Text>
-
-              <Text
-                style={[
-                  styles.summaryAmount,
-                  {
-                    color: theme.text,
-                  },
-                ]}
-              >
-                {formatAmount(
-                  incomeTotal
-                )}
-              </Text>
-            </View>
+            <Text
+              style={[
+                styles.summaryAmount,
+                {
+                  color: "#22C55E",
+                },
+              ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {formatAmount(incomeTotal)}
+            </Text>
           </View>
 
           {/* EXPENSE */}
@@ -1065,32 +1020,18 @@ export default function Transactions() {
               />
             </View>
 
-            <View style={styles.summaryTextBox}>
-              <Text
-                style={[
-                  styles.summaryLabel,
-                  {
-                    color:
-                      theme.secondaryText,
-                  },
-                ]}
-              >
-                Expense
-              </Text>
-
-              <Text
-                style={[
-                  styles.summaryAmount,
-                  {
-                    color: theme.text,
-                  },
-                ]}
-              >
-                {formatAmount(
-                  expenseTotal
-                )}
-              </Text>
-            </View>
+            <Text
+              style={[
+                styles.summaryAmount,
+                {
+                  color: "#EF4444",
+                },
+              ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {formatAmount(expenseTotal)}
+            </Text>
           </View>
         </View>
 
@@ -1662,9 +1603,9 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
-    paddingHorizontal: 18,
-    paddingTop: 22,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 30,
   },
 
   // -----------------------------------------------------------
@@ -1672,7 +1613,7 @@ const styles = StyleSheet.create({
   // -----------------------------------------------------------
 
   header: {
-    marginBottom: 20,
+    marginBottom: 10,
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
@@ -1682,55 +1623,50 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  topHeaderActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 12,
-    gap: 4,
-  },
-
-  topHeaderButton: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-  },
 
   headerTitle: {
-    fontSize: 27,
+    fontSize: 21,
     fontWeight: "700",
     letterSpacing: -0.5,
   },
 
   headerSubtitle: {
-    marginTop: 5,
-    fontSize: 13,
+    marginTop: 3,
+    fontSize: 10,
   },
 
   // -----------------------------------------------------------
   // MONTH
   // -----------------------------------------------------------
 
+  selectorRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 9,
+    position: "relative",
+    zIndex: 20,
+  },
+
   monthSelector: {
-    minHeight: 48,
+    flex: 1,
+    height: 42,
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 6,
-    marginBottom: 18,
   },
 
   monthArrow: {
-    width: 38,
-    height: 38,
+    width: 28,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
 
   monthText: {
-    fontSize: 16,
+    flex: 1,
+    textAlign: "center",
+    fontSize: 11,
     fontWeight: "600",
   },
 
@@ -1739,9 +1675,9 @@ const styles = StyleSheet.create({
   // -----------------------------------------------------------
 
   accountSection: {
-    marginBottom: 18,
+    flex: 1,
     position: "relative",
-    zIndex: 20,
+    zIndex: 30,
   },
 
   sectionLabel: {
@@ -1751,10 +1687,10 @@ const styles = StyleSheet.create({
   },
 
   accountButton: {
-    minHeight: 50,
-    borderRadius: 14,
+    height: 42,
+    borderRadius: 10,
     borderWidth: 1,
-    paddingHorizontal: 14,
+    paddingHorizontal: 9,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1764,35 +1700,39 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    minWidth: 0,
   },
 
-  accountDot: {
-    width: 11,
-    height: 11,
-    borderRadius: 6,
-    marginRight: 10,
+  accountUserIcon: {
+    width: 25,
+    height: 25,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
   },
 
   accountButtonText: {
-    fontSize: 15,
+    flex: 1,
+    fontSize: 11,
     fontWeight: "600",
   },
 
   dropdown: {
     position: "absolute",
-    top: 76,
+    top: 45,
     left: 0,
     right: 0,
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 11,
     overflow: "hidden",
     zIndex: 50,
     elevation: 8,
   },
 
   accountOption: {
-    minHeight: 58,
-    paddingHorizontal: 14,
+    minHeight: 50,
+    paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1805,12 +1745,12 @@ const styles = StyleSheet.create({
   },
 
   accountOptionText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
   },
 
   accountIdText: {
-    fontSize: 11,
+    fontSize: 9,
     marginTop: 2,
   },
 
@@ -1825,40 +1765,32 @@ const styles = StyleSheet.create({
 
   summaryRow: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 26,
+    gap: 8,
+    marginBottom: 14,
   },
 
   summaryCard: {
     flex: 1,
-    minHeight: 92,
+    height: 55,
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 13,
+    borderRadius: 11,
+    paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
   },
 
   summaryIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 33,
+    height: 33,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
-  },
-
-  summaryTextBox: {
-    flex: 1,
-  },
-
-  summaryLabel: {
-    fontSize: 12,
-    marginBottom: 4,
+    marginRight: 8,
   },
 
   summaryAmount: {
-    fontSize: 16,
+    flex: 1,
+    fontSize: 15,
     fontWeight: "700",
   },
 
@@ -1874,7 +1806,7 @@ const styles = StyleSheet.create({
   },
 
   transactionsTitle: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "700",
   },
 
@@ -1889,7 +1821,7 @@ const styles = StyleSheet.create({
   // -----------------------------------------------------------
 
   typeButton: {
-    minHeight: 38,
+    minHeight: 31,
     borderWidth: 1,
     borderRadius: 11,
     paddingHorizontal: 10,
@@ -1934,8 +1866,8 @@ const styles = StyleSheet.create({
   // -----------------------------------------------------------
 
   filterButton: {
-    width: 38,
-    height: 38,
+    width: 34,
+    height: 31,
     borderWidth: 1,
     borderRadius: 11,
     alignItems: "center",
@@ -2031,37 +1963,37 @@ const styles = StyleSheet.create({
   },
 
   transactionGroup: {
-    marginBottom: 20,
+    marginBottom: 10,
   },
 
   groupDate: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: 5,
     marginLeft: 3,
   },
 
   transactionCard: {
     borderWidth: 1,
-    borderRadius: 17,
+    borderRadius: 11,
     overflow: "hidden",
   },
 
   transactionRow: {
-    minHeight: 72,
-    paddingHorizontal: 13,
-    paddingVertical: 11,
+    minHeight: 57,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
     flexDirection: "row",
     alignItems: "center",
   },
 
   transactionIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: 9,
   },
 
   transactionDetails: {
@@ -2070,13 +2002,13 @@ const styles = StyleSheet.create({
   },
 
   transactionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
   },
 
   transactionSubtitle: {
-    fontSize: 11,
-    marginTop: 4,
+    fontSize: 9,
+    marginTop: 3,
   },
 
   transactionAmountBox: {
@@ -2085,12 +2017,12 @@ const styles = StyleSheet.create({
   },
 
   transactionAmount: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: "700",
   },
 
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 68,
+    marginLeft: 54,
   },
 });

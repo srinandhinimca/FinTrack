@@ -1,7 +1,7 @@
 import { useTheme } from "@/context/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import { createTransaction } from "@/services/transactionService";
-import {  Ionicons,  MaterialCommunityIcons,} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet,
