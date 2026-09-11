@@ -1,7 +1,7 @@
+import TransactionDetail from "@/components/transaction/TransactionDetail";
 import { useTheme } from "@/context/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import TransactionDetail from "@/components/transaction/TransactionDetail";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -1308,7 +1308,7 @@ export default function Transactions() {
               ]}
             >
               <MaterialCommunityIcons
-                name="receipt-text-outline"
+                name="receipt-outline"
                 size={28}
                 color={
                   theme.secondaryText

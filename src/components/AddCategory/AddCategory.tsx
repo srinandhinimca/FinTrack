@@ -16,20 +16,18 @@ type CategoryType = 'expense' | 'income';
 const icons: Array<
   keyof typeof MaterialCommunityIcons.glyphMap
 > = [
-  'silverware-fork-knife',
+  'cart-outline',
   'car-outline',
-  'shopping-outline',
+  'shopping',
   'home-outline',
-  'airplane-outline',
-
-  'receipt-text-outline',
+  'airplane',
+  'receipt-outline',
   'heart-outline',
   'school-outline',
   'gift-outline',
   'gamepad-variant-outline',
-
   'briefcase-outline',
-  'cup-outline',
+  'cafe-outline',
   'paw-outline',
   'dumbbell',
   'dots-horizontal',
@@ -101,7 +99,7 @@ export default function AddCategory({
   const [selectedIcon, setSelectedIcon] =
     useState<
       keyof typeof MaterialCommunityIcons.glyphMap
-    >('silverware-fork-knife');
+    >('restaurant-outline');
 
   // =======================================
   // SELECTED COLOR

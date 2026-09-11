@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/supabase";
+import { db } from "@/powersync";
+import * as Crypto from "expo-crypto";
 
 // =========================================
 // ACCOUNT TYPE
@@ -20,20 +22,22 @@ export interface Account {
 // =========================================
 
 async function getCurrentUser() {
+  // getSession() uses the locally stored Supabase session,
+  // so it works even when the phone is offline.
   const {
-    data: { user },
+    data: { session },
     error,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getSession();
 
   if (error) {
     throw error;
   }
 
-  if (!user) {
+  if (!session?.user) {
     throw new Error("User is not logged in.");
   }
 
-  return user;
+  return session.user;
 }
 
 // =========================================
@@ -43,10 +47,9 @@ async function getCurrentUser() {
 export async function getAccounts(): Promise<Account[]> {
   const user = await getCurrentUser();
 
-  const { data, error } = await supabase
-    .from("accounts")
-    .select(
-      `
+  const rows = await db.getAll<any>(
+    `
+      SELECT
         id,
         user_id,
         name,
@@ -55,23 +58,17 @@ export async function getAccounts(): Promise<Account[]> {
         color,
         created_at,
         updated_at
-      `
-    )
-    .eq("user_id", user.id)
-    .order("created_at", {
-      ascending: false,
-    });
+      FROM accounts
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `,
+    [user.id]
+  );
 
-  if (error) {
-    console.error(
-      "getAccounts error:",
-      error
-    );
-
-    throw error;
-  }
-
-  return data ?? [];
+  return rows.map((row) => ({
+    ...row,
+    opening_balance: Number(row.opening_balance),
+  }));
 }
 
 // =========================================
@@ -94,41 +91,50 @@ export async function createAccount({
   const accountName = name.trim();
 
   if (!accountName) {
-    throw new Error(
-      "Account name is required."
-    );
+    throw new Error("Account name is required.");
   }
 
-  const { data, error } = await supabase
-    .from("accounts")
-    .insert({
-      id: crypto.randomUUID(),
+  const id = Crypto.randomUUID();
+  const now = new Date().toISOString();
 
-      // IMPORTANT:
-      // Always use the logged-in user's ID.
-      user_id: user.id,
-
-      name: accountName,
-
-      opening_balance: openingBalance,
-
+  await db.execute(
+    `
+      INSERT INTO accounts (
+        id,
+        user_id,
+        name,
+        opening_balance,
+        currency,
+        color,
+        created_at,
+        updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      id,
+      user.id,
+      accountName,
+      String(openingBalance),
       currency,
-
       color,
-    })
-    .select()
-    .single();
+      now,
+      now,
+    ]
+  );
 
-  if (error) {
-    console.error(
-      "createAccount error:",
-      error
-    );
+  console.log("Account saved locally:", id);
 
-    throw error;
-  }
-
-  return data;
+  return {
+    id,
+    user_id: user.id,
+    name: accountName,
+    opening_balance: openingBalance,
+    currency,
+    color,
+    created_at: now,
+    updated_at: now,
+  };
 }
 
 // =========================================
@@ -154,35 +160,60 @@ export async function updateAccount(
   const accountName = name.trim();
 
   if (!accountName) {
-    throw new Error(
-      "Account name is required."
-    );
+    throw new Error("Account name is required.");
   }
 
-  const { data, error } = await supabase
-    .from("accounts")
-    .update({
-      name: accountName,
-      opening_balance: openingBalance,
+  const now = new Date().toISOString();
+
+  await db.execute(
+    `
+      UPDATE accounts
+      SET
+        name = ?,
+        opening_balance = ?,
+        currency = ?,
+        color = ?,
+        updated_at = ?
+      WHERE id = ?
+        AND user_id = ?
+    `,
+    [
+      accountName,
+      String(openingBalance),
       currency,
       color,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", accountId)
-    .eq("user_id", user.id)
-    .select()
-    .single();
+      now,
+      accountId,
+      user.id,
+    ]
+  );
 
-  if (error) {
-    console.error(
-      "updateAccount error:",
-      error
-    );
+  const account = await db.getOptional<any>(
+    `
+      SELECT
+        id,
+        user_id,
+        name,
+        opening_balance,
+        currency,
+        color,
+        created_at,
+        updated_at
+      FROM accounts
+      WHERE id = ?
+        AND user_id = ?
+    `,
+    [accountId, user.id]
+  );
 
-    throw error;
+  if (!account) {
+    throw new Error("Account not found.");
   }
 
-  return data;
+  return {
+    ...account,
+    opening_balance: Number(account.opening_balance),
+  };
 }
 
 // =========================================
@@ -194,18 +225,14 @@ export async function deleteAccount(
 ): Promise<void> {
   const user = await getCurrentUser();
 
-  const { error } = await supabase
-    .from("accounts")
-    .delete()
-    .eq("id", accountId)
-    .eq("user_id", user.id);
+  await db.execute(
+    `
+      DELETE FROM accounts
+      WHERE id = ?
+        AND user_id = ?
+    `,
+    [accountId, user.id]
+  );
 
-  if (error) {
-    console.error(
-      "deleteAccount error:",
-      error
-    );
-
-    throw error;
-  }
+  console.log("Account deleted locally:", accountId);
 }
