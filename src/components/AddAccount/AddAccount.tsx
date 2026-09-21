@@ -88,9 +88,11 @@ const handleSave = async () => {
           name,
           opening_balance,
           currency,
-          color
+          color,
+          created_at, 
+          updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         newAccountId,
@@ -99,6 +101,8 @@ const handleSave = async () => {
         parseFloat(openingBalance) || 0,
         currency,
         selectedColor,
+        new Date().toISOString(),
+        new Date().toISOString(),
       ]
     );
 

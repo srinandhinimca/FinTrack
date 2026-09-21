@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
 import { PowerSyncContext } from '@powersync/react-native';
+import React, { useEffect, useState } from 'react';
 
-import { db as powerSync } from './PowerSync';
-import { SupabaseConnector } from './Connector';
 import { supabase } from '../lib/supabase';
+import { SupabaseConnector } from './Connector';
+import { db as powerSync } from './PowerSync';
 
 
 type Props = {
@@ -20,9 +20,29 @@ export function DatabaseProvider({
 
     const connect = async () => {
       try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        console.log(
+  'Access token:',
+  session?.access_token
+);
+
+        if (!session) {
+          console.log('No authenticated user');
+          return;
+        }
+
+        console.log('1. Starting PowerSync connection');
+
         const connector = new SupabaseConnector(supabase);
 
+        console.log('2. Calling powerSync.connect()');
+
         await powerSync.connect(connector);
+
+        console.log('3. PowerSync connect completed');
 
         if (mounted) {
           setConnected(true);
@@ -41,9 +61,33 @@ export function DatabaseProvider({
 
     return () => {
       mounted = false;
-      powerSync.disconnect();
+      //powerSync.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+
+ const listener = powerSync.registerListener({
+  statusChanged: (status) => {
+    console.log(
+      '========== POWER SYNC STATUS =========='
+    );
+
+    console.log(
+      JSON.stringify(status, null, 2)
+    );
+
+    console.log(
+      '========================================'
+    );
+  },
+});
+
+  return () => {
+    listener?.();
+  };
+
+}, []);
 
   return (
     <PowerSyncContext.Provider value={powerSync as any}>

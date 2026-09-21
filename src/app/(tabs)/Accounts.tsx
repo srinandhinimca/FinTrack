@@ -69,43 +69,38 @@ export default function Accounts() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={styles.title}>Accounts ({accounts.length})</Text>
-      
-      {/* 4. Display the live accounts array */}
-      <FlatList
-        data={accounts}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        renderItem={({ item }) => (
-          // <View style={[styles.accountCard, { borderLeftColor: item.color || '#fff' }]}>
-          //   <Text style={styles.accountName}>{item.name}</Text>
-          //   <Text style={styles.accountBalance}>
-          //     {item.currency} {item.opening_balance?.toFixed(2) || '0.00'}
-          //   </Text>
-          // </View>
 
-
-          <View
+ <FlatList
+      data={accounts}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.listContainer}
+      renderItem={({ item }) => (
+        <View
+          style={[
+            styles.currencyItem,
+            { borderBottomColor: '#F0F0F0' }, // Soft divider that coordinates cleanly with white backgrounds
+          ]}
+        >
+          {/* Circular Badge with Person Icon */}
+          <View 
             style={[
-              styles.currencyItem,
-              { borderBottomColor: theme.border },
-
+              styles.iconContainer, 
+              { backgroundColor: item.color || theme.primary }
             ]}
           >
-            <Ionicons name="checkmark-circle" size={20} color={theme.primary} />
-            <Text style={[
-              styles.currencyItemText,
-              { color: theme.text }
-            ]}>
-              {item.name}
-            </Text>
-
+            <Ionicons name="person" size={16} color="#FFF" />
           </View>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No accounts found.</Text>
-        }
-      />
+
+          {/* Account Item Text - Automatically aligned right next to the icon */}
+          <Text style={[styles.currencyItemText, { color: theme.text }]}>
+            {item.name}
+          </Text>
+        </View>
+      )}
+      ListEmptyComponent={
+        <Text style={[styles.emptyText, { color: theme.text }]}>No accounts found.</Text>
+      }
+    />
     </View>
   );
 }
@@ -126,22 +121,15 @@ const styles = StyleSheet.create({
   listContainer: {
     gap: 12,
   },
-  accountCard: {
-    backgroundColor: '#353646',
-    padding: 16,
-    borderRadius: 8,
-    borderLeftWidth: 5,
+    iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16, // Creates the perfect circle badge
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12, // Pushes text nicely away from the circle badge
   },
-  accountName: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  accountBalance: {
-    color: '#b0b1bc',
-    fontSize: 14,
-    marginTop: 4,
-  },
+ 
   emptyText: {
     color: '#b0b1bc',
     textAlign: 'center',

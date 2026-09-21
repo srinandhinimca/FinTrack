@@ -7,7 +7,6 @@ import {
 const accounts = new Table(
   {
     user_id: column.text,
-    account_id: column.integer,
     name: column.text,
     opening_balance: column.real,
     currency: column.text,
